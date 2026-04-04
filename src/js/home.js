@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     for (var i = 0; i < botoes.length; i++) {
         botoes[i].addEventListener("click", function () {
             var id = this.getAttribute("data-id");
-            window.location.href = "visitante/instituicao.html?id=" + encodeURIComponent(id);
+            window.location.href = "estudante/login.html?id_instituicao=" + encodeURIComponent(id);
         });
     }
 
