@@ -12,6 +12,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     document.getElementById("btn-gerente").addEventListener("click", function () {
-        window.location.href = "visitante/login.html?tipo=gerente";
+        window.location.href = "gerente/login.html";
     });
 });
