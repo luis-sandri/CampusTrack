@@ -4,11 +4,11 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 document.getElementById("novo").addEventListener("click", () => {
-    window.location.href = "local_adicionar.html";
+    window.location.href = "gerente_adicionar.html";
 });
 
 async function carregarDados() {
-    const retorno = await fetch("../../php/local_get.php");
+    const retorno = await fetch("../../php/gerente_get.php");
     const resposta = await retorno.json();
 
     if (resposta.status == "ok") {
@@ -18,12 +18,10 @@ async function carregarDados() {
     <thead>
         <tr>
             <th>ID</th>
-            <th>Instituição</th>
-            <th>Tipo</th>
             <th>Nome</th>
-            <th>Cap.</th>
-            <th>Long.</th>
-            <th>Lat.</th>
+            <th>E-mail</th>
+            <th>Instituição</th>
+            <th>Escola</th>
             <th>Ações</th>
         </tr>
     </thead>
@@ -31,25 +29,19 @@ async function carregarDados() {
 
         if (registros.length === 0) {
             html +=
-                '<tr><td colspan="8" class="text-center text-muted">Nenhum local cadastrado.</td></tr>';
+                '<tr><td colspan="6" class="text-center text-muted">Nenhum gerente cadastrado.</td></tr>';
         } else {
             for (var i = 0; i < registros.length; i++) {
                 var objeto = registros[i];
-                var cap =
-                    objeto.capacidade !== null && objeto.capacidade !== undefined
-                        ? objeto.capacidade
-                        : "—";
                 html += `<tr>
-                <td>${objeto.id_local}</td>
-                <td>${objeto.nome_instituicao || "—"}</td>
-                <td>${objeto.tipo || ""}</td>
+                <td>${objeto.id_usuario}</td>
                 <td>${objeto.nome}</td>
-                <td>${cap}</td>
-                <td>${objeto.longitude || ""}</td>
-                <td>${objeto.latitude || ""}</td>
+                <td>${objeto.email}</td>
+                <td>${objeto.nome_instituicao || "—"}</td>
+                <td>${objeto.escola || "—"}</td>
                 <td>
-                    <a class="btn btn-primary btn-sm me-2" href='local_alterar.html?id=${objeto.id_local}'>Alterar</a>
-                    <button class="btn btn-danger btn-sm" onclick="excluir(${objeto.id_local})">Excluir</button>
+                    <a class="btn btn-primary btn-sm me-2" href='gerente_alterar.html?id=${objeto.id_usuario}'>Alterar</a>
+                    <button class="btn btn-danger btn-sm" onclick="excluir(${objeto.id_usuario})">Excluir</button>
                 </td>
             </tr>`;
             }
@@ -63,7 +55,7 @@ async function carregarDados() {
 }
 
 async function excluir(id) {
-    const retorno = await fetch("../../php/local_excluir.php?id=" + id);
+    const retorno = await fetch("../../php/gerente_excluir.php?id=" + id);
     const resposta = await retorno.json();
 
     if (resposta.status == "ok") {

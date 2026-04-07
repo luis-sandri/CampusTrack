@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function buscarDados(id) {
-    const retornoInst = await fetch("../php/instituicao_get.php");
+    const retornoInst = await fetch("../../php/instituicao_get_gerente.php");
     const respostaInst = await retornoInst.json();
     if (respostaInst.status != "ok") {
         alert("ERRO! " + respostaInst.mensagem);
@@ -25,7 +25,7 @@ async function buscarDados(id) {
         return;
     }
 
-    const retorno = await fetch("../php/local_get.php?id=" + id);
+    const retorno = await fetch("../../php/local_get.php?id=" + id);
     const resposta = await retorno.json();
 
     if (resposta.status == "ok") {
@@ -66,7 +66,7 @@ async function alterar_local() {
     local_alterado.append("longitude", longitude);
     local_alterado.append("latitude", latitude);
 
-    const retorno = await fetch("../php/local_alterar.php?id=" + id, {
+    const retorno = await fetch("../../php/local_alterar.php?id=" + id, {
         method: "POST",
         body: local_alterado,
     });

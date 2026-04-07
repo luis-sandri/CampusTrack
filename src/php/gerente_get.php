@@ -1,4 +1,5 @@
 <?php
+include_once __DIR__ . "/valida_sessao_admin.php";
 include_once __DIR__ . "/conexao.php";
 
 $retorno = [
@@ -10,7 +11,13 @@ $retorno = [
 if (isset($_GET["id"])) {
     $id = (int) $_GET["id"];
 
-    $stmt = $conexao->prepare("SELECT id_instituicao, nome FROM Instituicao WHERE id_instituicao = ?");
+    $sql = "SELECT u.id_usuario, u.nome, u.email, u.senha, g.id_instituicao, g.escola,
+            i.nome AS nome_instituicao
+            FROM Usuario u
+            INNER JOIN Gerente_locais g ON g.id_gerente = u.id_usuario
+            LEFT JOIN Instituicao i ON g.id_instituicao = i.id_instituicao
+            WHERE u.id_usuario = ?";
+    $stmt = $conexao->prepare($sql);
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $resultado = $stmt->get_result();
@@ -35,9 +42,13 @@ if (isset($_GET["id"])) {
         ];
     }
 } else {
-    $sql = "SELECT id_instituicao, nome FROM Instituicao ORDER BY nome";
+    $sql = "SELECT u.id_usuario, u.nome, u.email, g.id_instituicao, g.escola,
+            i.nome AS nome_instituicao
+            FROM Usuario u
+            INNER JOIN Gerente_locais g ON g.id_gerente = u.id_usuario
+            LEFT JOIN Instituicao i ON g.id_instituicao = i.id_instituicao
+            ORDER BY u.id_usuario";
     $result = $conexao->query($sql);
-
     $data = [];
     if ($result) {
         while ($row = $result->fetch_assoc()) {
@@ -51,7 +62,7 @@ if (isset($_GET["id"])) {
     } else {
         $retorno = [
             "status" => "not ok",
-            "mensagem" => "Não foi possível carregar as instituições.",
+            "mensagem" => "Não foi possível carregar os gerentes.",
             "data" => [],
         ];
     }

@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function carregarInstituicoes() {
-    const retorno = await fetch("../php/instituicao_get.php");
+    const retorno = await fetch("../../php/instituicao_get_gerente.php");
     const resposta = await retorno.json();
 
     if (resposta.status == "ok") {
@@ -40,7 +40,7 @@ async function adicionar_local() {
     novo_local.append("longitude", longitude);
     novo_local.append("latitude", latitude);
 
-    const retorno = await fetch("../php/local_adicionar.php", {
+    const retorno = await fetch("../../php/local_adicionar.php", {
         method: "POST",
         body: novo_local,
     });

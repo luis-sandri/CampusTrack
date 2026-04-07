@@ -1,4 +1,5 @@
 <?php
+session_start();
 include_once __DIR__ . "/conexao.php";
 
 $retorno = [
@@ -7,11 +8,17 @@ $retorno = [
     "data" => [],
 ];
 
-if (isset($_GET["id"])) {
-    $id = (int) $_GET["id"];
+if (!isset($_SESSION["gerente_logado"]) || $_SESSION["gerente_logado"] !== true) {
+    $retorno = [
+        "status" => "not ok",
+        "mensagem" => "Acesso negado.",
+        "data" => [],
+    ];
+} else {
+    $id_instituicao = (int) $_SESSION["gerente_id_instituicao"];
 
     $stmt = $conexao->prepare("SELECT id_instituicao, nome FROM Instituicao WHERE id_instituicao = ?");
-    $stmt->bind_param("i", $id);
+    $stmt->bind_param("i", $id_instituicao);
     $stmt->execute();
     $resultado = $stmt->get_result();
 
@@ -24,34 +31,13 @@ if (isset($_GET["id"])) {
     if (count($data) > 0) {
         $retorno = [
             "status" => "ok",
-            "mensagem" => "Registro encontrado.",
-            "data" => $data,
-        ];
-    } else {
-        $retorno = [
-            "status" => "not ok",
-            "mensagem" => "Registro não encontrado.",
-            "data" => [],
-        ];
-    }
-} else {
-    $sql = "SELECT id_instituicao, nome FROM Instituicao ORDER BY nome";
-    $result = $conexao->query($sql);
-
-    $data = [];
-    if ($result) {
-        while ($row = $result->fetch_assoc()) {
-            $data[] = $row;
-        }
-        $retorno = [
-            "status" => "ok",
             "mensagem" => "Lista carregada.",
             "data" => $data,
         ];
     } else {
         $retorno = [
             "status" => "not ok",
-            "mensagem" => "Não foi possível carregar as instituições.",
+            "mensagem" => "Instituição não encontrada.",
             "data" => [],
         ];
     }
