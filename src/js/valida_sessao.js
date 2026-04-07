@@ -1,0 +1,2 @@
+function valida_sessao() {
+}
