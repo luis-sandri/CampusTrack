@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (data.status === "ok") {
                 mostrarAlerta("Acesso validado! Redirecionando...", "success");
                 setTimeout(function () {
-                    window.location.href = "../gerente/gerenciar_local.html";
+                    window.location.href = "gerenciar_local.html";
                 }, 1000);
             } else {
                 mostrarAlerta(data.mensagem || "E-mail ou senha inválidos.", "danger");
