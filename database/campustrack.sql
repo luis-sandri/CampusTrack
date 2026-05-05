@@ -10,8 +10,7 @@ CREATE TABLE IF NOT EXISTS Usuario (
 
 CREATE TABLE IF NOT EXISTS Organizacao (
     id_organizacao INT          PRIMARY KEY AUTO_INCREMENT,
-    nome           VARCHAR(255) NOT NULL,
-    senha          VARCHAR(30)  NOT NULL,
+    nome           VARCHAR(255) NOT NULL,    
     cnpj           VARCHAR(14)  NOT NULL
 );
 
@@ -84,6 +83,9 @@ CREATE TABLE IF NOT EXISTS Locais (
 
 CREATE TABLE IF NOT EXISTS Evento (
     id_evento      INT PRIMARY KEY AUTO_INCREMENT,
+    nome VARCHAR(50) NOT NULL,
+    data DATETIME NOT NULL,
+    status VARCHAR(10) NOT NULL,
     id_local       INT NOT NULL,
     id_organizacao INT NOT NULL,
     id_organizador INT NOT NULL,
