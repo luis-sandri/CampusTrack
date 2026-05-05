@@ -7,34 +7,28 @@ $retorno = [
     "data" => [],
 ];
 
-$id_instituicao = isset($_POST["id_instituicao"]) ? (int) $_POST["id_instituicao"] : 0;
+$id_instituicao_raw = isset($_POST["id_instituicao"]) ? trim((string) $_POST["id_instituicao"]) : "";
+$id_instituicao = ctype_digit($id_instituicao_raw) ? (int) $id_instituicao_raw : 0;
+$tipo_escola = isset($_POST["tipo_escola"]) ? trim((string) $_POST["tipo_escola"]) : "";
 $tipo = isset($_POST["tipo"]) ? trim((string) $_POST["tipo"]) : "";
 $nome = isset($_POST["nome"]) ? trim((string) $_POST["nome"]) : "";
 $capacidade_raw = isset($_POST["capacidade"]) ? trim((string) $_POST["capacidade"]) : "";
 $longitude = isset($_POST["longitude"]) ? trim((string) $_POST["longitude"]) : "";
 $latitude = isset($_POST["latitude"]) ? trim((string) $_POST["latitude"]) : "";
 
-if ($id_instituicao <= 0 || $nome === "") {
+if ($id_instituicao <= 0 || $tipo_escola === "" || $tipo === "" || $nome === "" || $capacidade_raw === "" || !ctype_digit($capacidade_raw) || $longitude === "" || $latitude === "") {
     $retorno = [
         "status" => "not ok",
-        "mensagem" => "Instituição e nome são obrigatórios.",
+        "mensagem" => "Instituição, tipo de escola, tipo, nome, capacidade, longitude e latitude são obrigatórios.",
         "data" => [],
     ];
 } else {
-    if ($capacidade_raw === "") {
-        $stmt = $conexao->prepare(
-            "INSERT INTO Locais (id_instituicao, tipo, nome, capacidade, longitude, latitude)
-             VALUES (?, ?, ?, NULL, ?, ?)"
-        );
-        $stmt->bind_param("issss", $id_instituicao, $tipo, $nome, $longitude, $latitude);
-    } else {
-        $capacidade = (int) $capacidade_raw;
-        $stmt = $conexao->prepare(
-            "INSERT INTO Locais (id_instituicao, tipo, nome, capacidade, longitude, latitude)
-             VALUES (?, ?, ?, ?, ?, ?)"
-        );
-        $stmt->bind_param("isisss", $id_instituicao, $tipo, $nome, $capacidade, $longitude, $latitude);
-    }
+    $capacidade = (int) $capacidade_raw;
+    $stmt = $conexao->prepare(
+        "INSERT INTO Locais (id_instituicao, tipo_escola, tipo, nome, capacidade, longitude, latitude)
+         VALUES (?, ?, ?, ?, ?, ?, ?)"
+    );
+    $stmt->bind_param("isssiss", $id_instituicao, $tipo_escola, $tipo, $nome, $capacidade, $longitude, $latitude);
 
     $stmt->execute();
 

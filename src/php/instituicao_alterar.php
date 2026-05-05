@@ -9,7 +9,8 @@ $retorno = [
 ];
 
 if (isset($_GET["id"])) {
-    $id = (int) $_GET["id"];
+    $id_raw = trim((string) $_GET["id"]);
+    $id = ctype_digit($id_raw) ? (int) $id_raw : 0;
     $nome = isset($_POST["nome"]) ? trim((string) $_POST["nome"]) : "";
 
     if ($id <= 0 || $nome === "") {

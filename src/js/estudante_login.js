@@ -11,8 +11,10 @@ document.addEventListener("DOMContentLoaded", function () {
     // Pegar o ID da instituição da URL
     var urlParams = new URLSearchParams(window.location.search);
     var idInstituicao = urlParams.get('id_instituicao');
-    if (idInstituicao) {
+    if (idInstituicao && /^\d+$/.test(idInstituicao)) {
         inputIdInstituicao.value = idInstituicao;
+    } else {
+        mostrarAlerta("Instituição não informada ou inválida.", "danger");
     }
 
     function mostrarAlerta(mensagem, tipo) {
@@ -29,6 +31,13 @@ document.addEventListener("DOMContentLoaded", function () {
         esconderAlerta();
 
         var emailValor = inputEmail.value.trim();
+        var idInstituicaoValor = inputIdInstituicao.value.trim();
+
+        if (idInstituicaoValor === "" || !/^\d+$/.test(idInstituicaoValor)) {
+            mostrarAlerta("Instituição não informada ou inválida.", "danger");
+            return;
+        }
+
         if (!emailValor.endsWith("@pucpr.edu.br")) {
             mostrarAlerta("O e-mail deve ser do domínio @pucpr.edu.br", "danger");
             return;

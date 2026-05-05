@@ -14,11 +14,17 @@ async function carregarDados() {
     if (resposta.status == "ok") {
         const registros = resposta.data;
 
+        if (!Array.isArray(registros)) {
+            alert("ERRO! Lista de locais inválida no retorno do servidor.");
+            return;
+        }
+
         var html = `<table class="table table-striped align-middle">
     <thead>
         <tr>
             <th>ID</th>
             <th>Instituição</th>
+            <th>Tipo escola</th>
             <th>Tipo</th>
             <th>Nome</th>
             <th>Cap.</th>
@@ -31,22 +37,36 @@ async function carregarDados() {
 
         if (registros.length === 0) {
             html +=
-                '<tr><td colspan="8" class="text-center text-muted">Nenhum local cadastrado.</td></tr>';
+                '<tr><td colspan="9" class="text-center text-muted">Nenhum local cadastrado.</td></tr>';
         } else {
             for (var i = 0; i < registros.length; i++) {
                 var objeto = registros[i];
-                var cap =
-                    objeto.capacidade !== null && objeto.capacidade !== undefined
-                        ? objeto.capacidade
-                        : "—";
+
+                if (
+                    !objeto.id_local ||
+                    !objeto.id_instituicao ||
+                    !objeto.nome_instituicao ||
+                    !objeto.tipo_escola ||
+                    !objeto.tipo ||
+                    !objeto.nome ||
+                    objeto.capacidade === null ||
+                    objeto.capacidade === undefined ||
+                    !objeto.longitude ||
+                    !objeto.latitude
+                ) {
+                    alert("ERRO! Local com dados incompletos no retorno do servidor.");
+                    return;
+                }
+
                 html += `<tr>
                 <td>${objeto.id_local}</td>
-                <td>${objeto.nome_instituicao || "—"}</td>
-                <td>${objeto.tipo || ""}</td>
+                <td>${objeto.nome_instituicao}</td>
+                <td>${objeto.tipo_escola}</td>
+                <td>${objeto.tipo}</td>
                 <td>${objeto.nome}</td>
-                <td>${cap}</td>
-                <td>${objeto.longitude || ""}</td>
-                <td>${objeto.latitude || ""}</td>
+                <td>${objeto.capacidade}</td>
+                <td>${objeto.longitude}</td>
+                <td>${objeto.latitude}</td>
                 <td>
                     <a class="btn btn-primary btn-sm me-2" href='local_alterar.html?id=${objeto.id_local}'>Alterar</a>
                     <button class="btn btn-danger btn-sm" onclick="excluir(${objeto.id_local})">Excluir</button>

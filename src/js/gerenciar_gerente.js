@@ -14,6 +14,11 @@ async function carregarDados() {
     if (resposta.status == "ok") {
         const registros = resposta.data;
 
+        if (!Array.isArray(registros)) {
+            alert("ERRO! Lista de gerentes inválida no retorno do servidor.");
+            return;
+        }
+
         var html = `<table class="table table-striped align-middle">
     <thead>
         <tr>
@@ -33,12 +38,18 @@ async function carregarDados() {
         } else {
             for (var i = 0; i < registros.length; i++) {
                 var objeto = registros[i];
+
+                if (!objeto.id_usuario || !objeto.nome || !objeto.email || !objeto.id_instituicao || !objeto.nome_instituicao || !objeto.escola) {
+                    alert("ERRO! Gerente com dados incompletos no retorno do servidor.");
+                    return;
+                }
+
                 html += `<tr>
                 <td>${objeto.id_usuario}</td>
                 <td>${objeto.nome}</td>
                 <td>${objeto.email}</td>
-                <td>${objeto.nome_instituicao || "—"}</td>
-                <td>${objeto.escola || "—"}</td>
+                <td>${objeto.nome_instituicao}</td>
+                <td>${objeto.escola}</td>
                 <td>
                     <a class="btn btn-primary btn-sm me-2" href='gerente_alterar.html?id=${objeto.id_usuario}'>Alterar</a>
                     <button class="btn btn-danger btn-sm" onclick="excluir(${objeto.id_usuario})">Excluir</button>
