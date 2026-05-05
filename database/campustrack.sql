@@ -1,3 +1,4 @@
+-- Modelo físico do banco de dados
 CREATE DATABASE campustrack;
 USE campustrack;
 
