@@ -9,27 +9,36 @@ $retorno = [
 ];
 
 if (isset($_GET["id"])) {
-    $id = (int) $_GET["id"];
+    $id_raw = trim((string) $_GET["id"]);
+    $id = ctype_digit($id_raw) ? (int) $id_raw : 0;
 
-    $stmt = $conexao->prepare("DELETE FROM Usuario WHERE id_usuario = ?");
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-
-    if ($stmt->affected_rows > 0) {
+    if ($id <= 0) {
         $retorno = [
-            "status" => "ok",
-            "mensagem" => "Gerente excluído com sucesso.",
+            "status" => "not ok",
+            "mensagem" => "ID invalido.",
             "data" => [],
         ];
     } else {
-        $retorno = [
-            "status" => "not ok",
-            "mensagem" => "Não foi possível excluir o gerente.",
-            "data" => [],
-        ];
-    }
+        $stmt = $conexao->prepare("DELETE FROM Usuario WHERE id_usuario = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
 
-    $stmt->close();
+        if ($stmt->affected_rows > 0) {
+            $retorno = [
+                "status" => "ok",
+                "mensagem" => "Gerente excluído com sucesso.",
+                "data" => [],
+            ];
+        } else {
+            $retorno = [
+                "status" => "not ok",
+                "mensagem" => "Não foi possível excluir o gerente.",
+                "data" => [],
+            ];
+        }
+
+        $stmt->close();
+    }
 } else {
     $retorno = [
         "status" => "not ok",

@@ -16,21 +16,35 @@ $retorno = [
 ];
 
 $email = isset($_POST["email"]) ? trim((string) $_POST["email"]) : "";
-$id_instituicao = isset($_POST["id_instituicao"]) ? trim((string) $_POST["id_instituicao"]) : "";
+$id_instituicao_raw = isset($_POST["id_instituicao"]) ? trim((string) $_POST["id_instituicao"]) : "";
+$id_instituicao = ctype_digit($id_instituicao_raw) ? (int) $id_instituicao_raw : 0;
 
-if ($email === "") {
+if ($email === "" || $id_instituicao <= 0) {
     $retorno["status"] = "not ok";
-    $retorno["mensagem"] = "E-mail não informado.";
+    $retorno["mensagem"] = "E-mail e instituição são obrigatórios.";
 } else if (!preg_match("/@pucpr\.edu\.br$/", $email)) {
     $retorno["status"] = "not ok";
     $retorno["mensagem"] = "O e-mail deve ser institucional (@pucpr.edu.br).";
 } else {
+    $stmt = $conexao->prepare("SELECT id_instituicao FROM Instituicao WHERE id_instituicao = ?");
+    $stmt->bind_param("i", $id_instituicao);
+    $stmt->execute();
+    $resultado = $stmt->get_result();
+
+    if ($resultado->num_rows !== 1) {
+        $retorno["status"] = "not ok";
+        $retorno["mensagem"] = "Instituição não encontrada.";
+        $stmt->close();
+    } else {
+        $stmt->close();
+
     // Gerar código de 6 dígitos
     $codigo = rand(100000, 999999);
 
     // Salvar na sessão
     $_SESSION["codigo_2fa_" . $email] = $codigo;
     $_SESSION["2fa_expires_" . $email] = time() + (15 * 60); // 15 minutos de expiração
+    $_SESSION["aluno_id_instituicao"] = $id_instituicao;
 
     $mail = new PHPMailer(true);
 
@@ -74,6 +88,7 @@ if ($email === "") {
         $retorno["status"] = "not ok";
         $retorno["mensagem"] = "Não foi possível enviar o código. Tente novamente mais tarde.";
         // $retorno["mensagem"] = "Erro do Mailer: {$mail->ErrorInfo}"; // Para depurar
+    }
     }
 }
 

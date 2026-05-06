@@ -9,14 +9,16 @@ $retorno = [
 ];
 
 if (isset($_GET["id"])) {
-    $id = (int) $_GET["id"];
+    $id_raw = trim((string) $_GET["id"]);
+    $id = ctype_digit($id_raw) ? (int) $id_raw : 0;
     $nome = isset($_POST["nome"]) ? trim((string) $_POST["nome"]) : "";
     $email = isset($_POST["email"]) ? trim((string) $_POST["email"]) : "";
     $senha = isset($_POST["senha"]) ? trim((string) $_POST["senha"]) : "";
-    $id_instituicao = isset($_POST["id_instituicao"]) ? (int) $_POST["id_instituicao"] : 0;
+    $id_instituicao_raw = isset($_POST["id_instituicao"]) ? trim((string) $_POST["id_instituicao"]) : "";
+    $id_instituicao = ctype_digit($id_instituicao_raw) ? (int) $id_instituicao_raw : 0;
     $escola = isset($_POST["escola"]) ? trim((string) $_POST["escola"]) : "";
 
-    if ($id <= 0 || $nome === "" || $email === "" || $senha === "" || $id_instituicao <= 0) {
+    if ($id <= 0 || $nome === "" || $email === "" || $senha === "" || $id_instituicao <= 0 || $escola === "") {
         $retorno = [
             "status" => "not ok",
             "mensagem" => "Dados inválidos.",
@@ -31,9 +33,9 @@ if (isset($_GET["id"])) {
         $stmt->execute();
         $stmt->close();
 
-        // atualizar tabela Gerente_locais
+        // atualizar tabela Gerente_Locais
         $stmt2 = $conexao->prepare(
-            "UPDATE Gerente_locais SET id_instituicao = ?, escola = ? WHERE id_gerente = ?"
+            "UPDATE Gerente_Locais SET id_instituicao = ?, escola = ? WHERE id_gerente = ?"
         );
         $stmt2->bind_param("isi", $id_instituicao, $escola, $id);
         $stmt2->execute();

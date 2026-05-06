@@ -8,35 +8,30 @@ $retorno = [
 ];
 
 if (isset($_GET["id"])) {
-    $id = (int) $_GET["id"];
-    $id_instituicao = isset($_POST["id_instituicao"]) ? (int) $_POST["id_instituicao"] : 0;
+    $id_raw = trim((string) $_GET["id"]);
+    $id = ctype_digit($id_raw) ? (int) $id_raw : 0;
+    $id_instituicao_raw = isset($_POST["id_instituicao"]) ? trim((string) $_POST["id_instituicao"]) : "";
+    $id_instituicao = ctype_digit($id_instituicao_raw) ? (int) $id_instituicao_raw : 0;
+    $tipo_escola = isset($_POST["tipo_escola"]) ? trim((string) $_POST["tipo_escola"]) : "";
     $tipo = isset($_POST["tipo"]) ? trim((string) $_POST["tipo"]) : "";
     $nome = isset($_POST["nome"]) ? trim((string) $_POST["nome"]) : "";
     $capacidade_raw = isset($_POST["capacidade"]) ? trim((string) $_POST["capacidade"]) : "";
     $longitude = isset($_POST["longitude"]) ? trim((string) $_POST["longitude"]) : "";
     $latitude = isset($_POST["latitude"]) ? trim((string) $_POST["latitude"]) : "";
 
-    if ($id <= 0 || $id_instituicao <= 0 || $nome === "") {
+    if ($id <= 0 || $id_instituicao <= 0 || $tipo_escola === "" || $tipo === "" || $nome === "" || $capacidade_raw === "" || !ctype_digit($capacidade_raw) || $longitude === "" || $latitude === "") {
         $retorno = [
             "status" => "not ok",
             "mensagem" => "Dados inválidos.",
             "data" => [],
         ];
     } else {
-        if ($capacidade_raw === "") {
-            $stmt = $conexao->prepare(
-                "UPDATE Locais SET id_instituicao = ?, tipo = ?, nome = ?, capacidade = NULL, longitude = ?, latitude = ?
-                 WHERE id_local = ?"
-            );
-            $stmt->bind_param("issssi", $id_instituicao, $tipo, $nome, $longitude, $latitude, $id);
-        } else {
-            $capacidade = (int) $capacidade_raw;
-            $stmt = $conexao->prepare(
-                "UPDATE Locais SET id_instituicao = ?, tipo = ?, nome = ?, capacidade = ?, longitude = ?, latitude = ?
-                 WHERE id_local = ?"
-            );
-            $stmt->bind_param("isisssi", $id_instituicao, $tipo, $nome, $capacidade, $longitude, $latitude, $id);
-        }
+        $capacidade = (int) $capacidade_raw;
+        $stmt = $conexao->prepare(
+            "UPDATE Locais SET id_instituicao = ?, tipo_escola = ?, tipo = ?, nome = ?, capacidade = ?, longitude = ?, latitude = ?
+             WHERE id_local = ?"
+        );
+        $stmt->bind_param("isssissi", $id_instituicao, $tipo_escola, $tipo, $nome, $capacidade, $longitude, $latitude, $id);
 
         $stmt->execute();
 

@@ -14,6 +14,11 @@ async function carregarDados() {
     if (resposta.status == "ok") {
         const registros = resposta.data;
 
+        if (!Array.isArray(registros)) {
+            alert("ERRO! Lista de instituições inválida no retorno do servidor.");
+            return;
+        }
+
         var html = `<table class="table table-striped align-middle">
     <thead>
         <tr>
@@ -30,6 +35,12 @@ async function carregarDados() {
         } else {
             for (var i = 0; i < registros.length; i++) {
                 var objeto = registros[i];
+
+                if (!objeto.id_instituicao || !objeto.nome) {
+                    alert("ERRO! Instituição com dados incompletos no retorno do servidor.");
+                    return;
+                }
+
                 html += `<tr>
                 <td>${objeto.id_instituicao}</td>
                 <td>${objeto.nome}</td>

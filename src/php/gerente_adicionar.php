@@ -11,13 +11,14 @@ $retorno = [
 $nome = isset($_POST["nome"]) ? trim((string) $_POST["nome"]) : "";
 $email = isset($_POST["email"]) ? trim((string) $_POST["email"]) : "";
 $senha = isset($_POST["senha"]) ? trim((string) $_POST["senha"]) : "";
-$id_instituicao = isset($_POST["id_instituicao"]) ? (int) $_POST["id_instituicao"] : 0;
+$id_instituicao_raw = isset($_POST["id_instituicao"]) ? trim((string) $_POST["id_instituicao"]) : "";
+$id_instituicao = ctype_digit($id_instituicao_raw) ? (int) $id_instituicao_raw : 0;
 $escola = isset($_POST["escola"]) ? trim((string) $_POST["escola"]) : "";
 
-if ($nome === "" || $email === "" || $senha === "" || $id_instituicao <= 0) {
+if ($nome === "" || $email === "" || $senha === "" || $id_instituicao <= 0 || $escola === "") {
     $retorno = [
         "status" => "not ok",
-        "mensagem" => "Nome, e-mail, senha e instituição são obrigatórios.",
+        "mensagem" => "Nome, e-mail, senha, instituição e escola são obrigatórios.",
         "data" => [],
     ];
 } else {
@@ -32,9 +33,9 @@ if ($nome === "" || $email === "" || $senha === "" || $id_instituicao <= 0) {
         $id_usuario = (int) $conexao->insert_id;
         $stmt->close();
 
-        // inserir na tabela Gerente_locais
+        // inserir na tabela Gerente_Locais
         $stmt2 = $conexao->prepare(
-            "INSERT INTO Gerente_locais (id_gerente, id_instituicao, escola) VALUES (?, ?, ?)"
+            "INSERT INTO Gerente_Locais (id_gerente, id_instituicao, escola) VALUES (?, ?, ?)"
         );
         $stmt2->bind_param("iis", $id_usuario, $id_instituicao, $escola);
         $stmt2->execute();

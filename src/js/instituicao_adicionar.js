@@ -8,7 +8,12 @@ document.getElementById("form-instituicao").addEventListener("submit", function 
 });
 
 async function adicionar_instituicao() {
-    var nome = document.getElementById("instituicao-nome").value;
+    var nome = document.getElementById("instituicao-nome").value.trim();
+
+    if (nome === "") {
+        alert("ERRO! Nome da instituição é obrigatório.");
+        return;
+    }
 
     const nova_instituicao = new FormData();
     nova_instituicao.append("nome", nome);

@@ -34,15 +34,19 @@
       <div class="card-body">
         <form id="form-local">
           <div class="row">
-            <div class="col-md-6 mb-3">
+            <div class="col-md-4 mb-3">
               <label for="local-id_instituicao" class="form-label">Instituição</label>
               <select id="local-id_instituicao" class="form-control" required>
                 <option value="">Carregando…</option>
               </select>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-4 mb-3">
+              <label for="local-tipo_escola" class="form-label">Tipo de escola</label>
+              <input type="text" class="form-control" id="local-tipo_escola" maxlength="50" required>
+            </div>
+            <div class="col-md-4 mb-3">
               <label for="local-tipo" class="form-label">Tipo</label>
-              <input type="text" class="form-control" id="local-tipo" maxlength="50">
+              <input type="text" class="form-control" id="local-tipo" maxlength="50" required>
             </div>
           </div>
           <div class="row">
@@ -54,15 +58,15 @@
           <div class="row">
             <div class="col-md-4 mb-3">
               <label for="local-capacidade" class="form-label">Capacidade</label>
-              <input type="number" class="form-control" id="local-capacidade" min="0">
+              <input type="number" class="form-control" id="local-capacidade" min="0" required>
             </div>
             <div class="col-md-4 mb-3">
               <label for="local-longitude" class="form-label">Longitude</label>
-              <input type="text" class="form-control" id="local-longitude" maxlength="10">
+              <input type="text" class="form-control" id="local-longitude" maxlength="10" required>
             </div>
             <div class="col-md-4 mb-3">
               <label for="local-latitude" class="form-label">Latitude</label>
-              <input type="text" class="form-control" id="local-latitude" maxlength="8">
+              <input type="text" class="form-control" id="local-latitude" maxlength="8" required>
             </div>
           </div>
           <div>

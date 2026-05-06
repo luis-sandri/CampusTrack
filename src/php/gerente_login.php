@@ -18,7 +18,7 @@ if ($email === "" || $senha === "") {
     $stmt = $conexao->prepare("
         SELECT u.id_usuario, u.nome, u.email, g.id_instituicao
         FROM Usuario u
-        INNER JOIN Gerente_locais g ON g.id_gerente = u.id_usuario
+        INNER JOIN Gerente_Locais g ON g.id_gerente = u.id_usuario
         WHERE u.email = ? AND u.senha = ?
     ");
 
