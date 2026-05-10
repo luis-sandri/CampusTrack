@@ -1,6 +1,7 @@
 <?php
 session_start();
 include_once __DIR__ . "/conexao.php";
+include_once __DIR__ . "/validacoes.php";
 
 $retorno = [
     "status" => "",
@@ -10,44 +11,103 @@ $retorno = [
 
 $email = isset($_POST["email_verificacao"]) ? trim((string) $_POST["email_verificacao"]) : "";
 $codigo_inserido = isset($_POST["codigo"]) ? trim((string) $_POST["codigo"]) : "";
+$nome = isset($_POST["nome"]) ? trim((string) $_POST["nome"]) : "";
+$senha = isset($_POST["senha"]) ? trim((string) $_POST["senha"]) : "";
+$curso = isset($_POST["curso"]) ? trim((string) $_POST["curso"]) : "";
+$id_instituicao_raw = isset($_POST["id_instituicao"]) ? trim((string) $_POST["id_instituicao"]) : "";
+$id_instituicao = ctype_digit($id_instituicao_raw) ? (int) $id_instituicao_raw : 0;
+$eh_cadastro = $nome !== "" || $senha !== "" || $curso !== "" || $id_instituicao > 0;
 
 if ($email === "" || $codigo_inserido === "") {
     $retorno["status"] = "not ok";
     $retorno["mensagem"] = "Dados incompletos informados.";
+} else if ($eh_cadastro && ($nome === "" || $senha === "" || $curso === "" || $id_instituicao <= 0)) {
+    $retorno["status"] = "not ok";
+    $retorno["mensagem"] = "Nome, e-mail, senha, curso, instituicao e codigo sao obrigatorios.";
+} else if ($eh_cadastro && !senha_valida($senha)) {
+    $retorno["status"] = "not ok";
+    $retorno["mensagem"] = "A senha deve ter pelo menos 8 caracteres, 1 numero e 1 simbolo.";
+} else if (!isset($_SESSION["codigo_2fa_" . $email])) {
+    $retorno["status"] = "not ok";
+    $retorno["mensagem"] = "Nenhum codigo ativo encontrado para este e-mail.";
+} else if (time() > $_SESSION["2fa_expires_" . $email]) {
+    $retorno["status"] = "not ok";
+    $retorno["mensagem"] = "O codigo expirou. Solicite um novo codigo.";
+    unset($_SESSION["codigo_2fa_" . $email]);
+    unset($_SESSION["2fa_expires_" . $email]);
 } else {
-    // Verifica se a sessão existe e bate com os dois dados
-    if (isset($_SESSION["codigo_2fa_" . $email])) {
-        // Verifica se expirou
-        if (time() > $_SESSION["2fa_expires_" . $email]) {
+    $codigo_salvo = (string) $_SESSION["codigo_2fa_" . $email];
+
+    if ($codigo_inserido !== $codigo_salvo) {
+        $retorno["status"] = "not ok";
+        $retorno["mensagem"] = "Codigo incorreto. Tente novamente.";
+    } else if ($eh_cadastro) {
+        if (!preg_match("/@pucpr\.edu\.br$/", $email)) {
             $retorno["status"] = "not ok";
-            $retorno["mensagem"] = "O código expirou. Solicite um novo código.";
-            // Limpa o código antigo
-            unset($_SESSION["codigo_2fa_" . $email]);
-            unset($_SESSION["2fa_expires_" . $email]);
+            $retorno["mensagem"] = "O e-mail deve ser institucional (@pucpr.edu.br).";
         } else {
-            $codigo_salvo = (string)$_SESSION["codigo_2fa_" . $email];
-            
-            if ($codigo_inserido === $codigo_salvo) {
-                // Sucesso
-                $retorno["status"] = "ok";
-                $retorno["mensagem"] = "Acesso validado com sucesso.";
-                
-                // Cria a sessão de estudante "logado"
-                $_SESSION["aluno_logado"] = true;
-                $_SESSION["aluno_email"] = $email;
-                
-                // Remove o código 2FA da sessão por segurança para não ser reutilizado
-                unset($_SESSION["codigo_2fa_" . $email]);
-                unset($_SESSION["2fa_expires_" . $email]);
-            } else {
-                // Código inválido
+            $stmt = $conexao->prepare("SELECT id_usuario FROM Usuario WHERE email = ?");
+            $stmt->bind_param("s", $email);
+            $stmt->execute();
+            $resultado = $stmt->get_result();
+
+            if ($resultado->num_rows > 0) {
                 $retorno["status"] = "not ok";
-                $retorno["mensagem"] = "Código incorreto. Tente novamente.";
+                $retorno["mensagem"] = "Este e-mail ja possui cadastro.";
+                $stmt->close();
+            } else {
+                $stmt->close();
+
+                $stmt = $conexao->prepare("SELECT id_instituicao FROM Instituicao WHERE id_instituicao = ?");
+                $stmt->bind_param("i", $id_instituicao);
+                $stmt->execute();
+                $resultado = $stmt->get_result();
+
+                if ($resultado->num_rows !== 1) {
+                    $retorno["status"] = "not ok";
+                    $retorno["mensagem"] = "Instituicao nao encontrada.";
+                    $stmt->close();
+                } else {
+                    $stmt->close();
+                    $conexao->begin_transaction();
+
+                    try {
+                        $stmt = $conexao->prepare("INSERT INTO Usuario (nome, email, senha) VALUES (?, ?, ?)");
+                        $stmt->bind_param("sss", $nome, $email, $senha);
+                        $stmt->execute();
+                        $id_usuario = (int) $conexao->insert_id;
+                        $stmt->close();
+
+                        $stmt = $conexao->prepare("INSERT INTO Aluno (id_aluno, id_instituicao, curso) VALUES (?, ?, ?)");
+                        $stmt->bind_param("iis", $id_usuario, $id_instituicao, $curso);
+                        $stmt->execute();
+                        $stmt->close();
+
+                        $conexao->commit();
+
+                        $retorno["status"] = "ok";
+                        $retorno["mensagem"] = "Aluno cadastrado com sucesso.";
+                        $retorno["data"] = [["id_usuario" => $id_usuario]];
+                    } catch (Throwable $e) {
+                        $conexao->rollback();
+                        $retorno["status"] = "not ok";
+                        $retorno["mensagem"] = "Nao foi possivel cadastrar o aluno.";
+                    }
+                }
             }
         }
     } else {
-        $retorno["status"] = "not ok";
-        $retorno["mensagem"] = "Nenhum código ativo encontrado para este e-mail.";
+        $retorno["status"] = "ok";
+        $retorno["mensagem"] = "Acesso validado com sucesso.";
+    }
+
+    if ($retorno["status"] === "ok") {
+        $_SESSION["aluno_logado"] = true;
+        $_SESSION["aluno_email"] = $email;
+        $_SESSION["aluno_id_instituicao"] = $id_instituicao > 0 ? $id_instituicao : ($_SESSION["aluno_id_instituicao"] ?? null);
+
+        unset($_SESSION["codigo_2fa_" . $email]);
+        unset($_SESSION["2fa_expires_" . $email]);
     }
 }
 

@@ -40,6 +40,10 @@ document.getElementById("form-gerente").addEventListener("submit", function (eve
     adicionar_gerente();
 });
 
+function validarSenha(senha) {
+    return senha.length >= 8 && /\d/.test(senha) && /[^a-zA-Z0-9]/.test(senha);
+}
+
 async function adicionar_gerente() {
     var nome = document.getElementById("gerente-nome").value.trim();
     var email = document.getElementById("gerente-email").value.trim();
@@ -54,6 +58,11 @@ async function adicionar_gerente() {
 
     if (!/^\d+$/.test(id_instituicao)) {
         alert("ERRO! Instituição inválida.");
+        return;
+    }
+
+    if (!validarSenha(senha)) {
+        alert("ERRO! A senha deve ter pelo menos 8 caracteres, 1 numero e 1 simbolo.");
         return;
     }
 

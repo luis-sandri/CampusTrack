@@ -7,7 +7,11 @@ CampusTrack é um sistema web para gerenciamento de instituições, gerentes de 
 - Seleção de instituição na tela inicial.
 - Login de administrador.
 - Login de gerente de blocos/locais.
-- Login de estudante com envio e verificação de código por e-mail.
+- Login de organização.
+- Cadastro de organização.
+- Login de organizador.
+- Cadastro, edição, listagem e exclusão de organizadores por organização.
+- Cadastro de estudante com envio e verificação de código por e-mail.
 - Cadastro, edição, listagem e exclusão de instituições.
 - Cadastro, edição, listagem e exclusão de gerentes.
 - Cadastro, edição, listagem e exclusão de locais.
@@ -83,7 +87,11 @@ http://localhost/CampusTrack/src/html/index.html
 - Início: `src/html/index.html`
 - Login do administrador: `src/html/admin/login.html`
 - Login do gerente: `src/html/gerente/login.html`
-- Login do estudante: `src/html/estudante/login.html`
+- Login da organização: `src/html/visitante/login.html?tipo=organizacao`
+- Login do organizador: `src/html/visitante/organizador_login.html`
+- Gerenciar organizadores: `src/html/visitante/gerenciar_organizador.html`
+- Cadastro da organização: `src/html/visitante/organizacao_cadastro.html`
+- Cadastro do estudante: `src/html/estudante/login.html`
 - Gerenciar instituições: `src/html/admin/gerenciar_instituicao.html`
 - Gerenciar gerentes: `src/html/admin/gerenciar_gerente.html`
 - Gerenciar locais: `src/html/gerente/gerenciar_local.html`
@@ -102,9 +110,19 @@ O modelo físico está no arquivo `database/campustrack.sql`. As principais tabe
 - `Organizador`
 - `Evento`
 
+## Dados de teste
+
+O arquivo `database/campustrack.sql` inclui uma populacao simples para testes:
+
+- Administrador: `admin@campustrack.com` / `Teste@123`
+- Gerente: `gerente@campustrack.com` / `Teste@123`
+- Aluno: `aluno@pucpr.edu.br` / `Teste@123`
+- Organizacao: CNPJ `11222333000181` / senha `Teste@123`
+- Organizador: `organizador@campustrack.com` / `Teste@123`
+
 ## Configuração de e-mail
 
-O envio de código para login de estudante usa PHPMailer em `src/php/codigo_enviar.php`.
+O envio de código para cadastro de estudante usa PHPMailer em `src/php/codigo_enviar.php`.
 
 Antes de publicar ou compartilhar o projeto, mova as credenciais SMTP para variáveis de ambiente ou outro arquivo de configuração fora do versionamento. Manter usuário e senha diretamente no código não é recomendado.
 

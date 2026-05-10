@@ -1,6 +1,7 @@
 <?php
 include_once __DIR__ . "/valida_sessao_admin.php";
 include_once __DIR__ . "/conexao.php";
+include_once __DIR__ . "/validacoes.php";
 
 $retorno = [
     "status" => "",
@@ -25,6 +26,18 @@ if (isset($_GET["id"])) {
             "data" => [],
         ];
     } else {
+        if (!senha_valida($senha)) {
+            $retorno = [
+                "status" => "not ok",
+                "mensagem" => "A senha deve ter pelo menos 8 caracteres, 1 numero e 1 simbolo.",
+                "data" => [],
+            ];
+            $conexao->close();
+            header("Content-type:application/json;charset=utf-8");
+            echo json_encode($retorno);
+            exit;
+        }
+
         // atualizar tabela Usuario
         $stmt = $conexao->prepare(
             "UPDATE Usuario SET nome = ?, email = ?, senha = ? WHERE id_usuario = ?"

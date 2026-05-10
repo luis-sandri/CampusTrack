@@ -82,6 +82,10 @@ document.getElementById("form-gerente").addEventListener("submit", function (eve
     alterar_gerente();
 });
 
+function validarSenha(senha) {
+    return senha.length >= 8 && /\d/.test(senha) && /[^a-zA-Z0-9]/.test(senha);
+}
+
 async function alterar_gerente() {
     var id = document.getElementById("gerente-id_usuario").value.trim();
     var nome = document.getElementById("gerente-nome").value.trim();
@@ -97,6 +101,11 @@ async function alterar_gerente() {
 
     if (!/^\d+$/.test(id) || !/^\d+$/.test(id_instituicao)) {
         alert("ERRO! ID e instituição precisam ser números válidos.");
+        return;
+    }
+
+    if (!validarSenha(senha)) {
+        alert("ERRO! A senha deve ter pelo menos 8 caracteres, 1 numero e 1 simbolo.");
         return;
     }
 

@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS Usuario (
 CREATE TABLE IF NOT EXISTS Organizacao (
     id_organizacao INT          PRIMARY KEY AUTO_INCREMENT,
     nome           VARCHAR(255) NOT NULL,    
-    cnpj           VARCHAR(14)  NOT NULL
+    cnpj           VARCHAR(14)  NOT NULL,
+    senha          VARCHAR(30)  NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS Instituicao (
@@ -61,9 +62,14 @@ CREATE TABLE IF NOT EXISTS Administrador (
 CREATE TABLE IF NOT EXISTS Organizador (
     id_organizador INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     id_usuario     INT NOT NULL,
+    id_organizacao INT NOT NULL,
     CONSTRAINT fk_organizador_usuario
         FOREIGN KEY (id_usuario)
         REFERENCES Usuario(id_usuario)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_organizador_organizacao
+        FOREIGN KEY (id_organizacao)
+        REFERENCES Organizacao(id_organizacao)
         ON DELETE CASCADE
 );
 
@@ -103,3 +109,84 @@ CREATE TABLE IF NOT EXISTS Evento (
         REFERENCES Organizador(id_organizador)
         ON DELETE CASCADE
 );
+
+ALTER TABLE Organizacao
+    ADD COLUMN IF NOT EXISTS senha VARCHAR(30) NOT NULL DEFAULT 'Teste@123';
+
+ALTER TABLE Organizador
+    ADD COLUMN IF NOT EXISTS id_organizacao INT NOT NULL DEFAULT 1;
+
+-- Populacao simples para testes
+INSERT INTO Usuario (id_usuario, nome, email, senha) VALUES
+    (1, 'Administrador Teste', 'admin@campustrack.com', 'Teste@123'),
+    (2, 'Gerente Teste', 'gerente@campustrack.com', 'Teste@123'),
+    (3, 'Aluno Teste', 'aluno@pucpr.edu.br', 'Teste@123'),
+    (4, 'Organizador Teste', 'organizador@campustrack.com', 'Teste@123')
+ON DUPLICATE KEY UPDATE
+    nome = VALUES(nome),
+    email = VALUES(email),
+    senha = VALUES(senha);
+
+INSERT INTO Organizacao (id_organizacao, nome, cnpj, senha) VALUES
+    (1, 'Organizacao Teste', '11222333000181', 'Teste@123')
+ON DUPLICATE KEY UPDATE
+    nome = VALUES(nome),
+    cnpj = VALUES(cnpj),
+    senha = VALUES(senha);
+
+INSERT INTO Instituicao (id_instituicao, nome) VALUES
+    (1, 'PUCPR Curitiba'),
+    (2, 'Instituto Tecnologico Regional'),
+    (3, 'Faculdade Municipal do Norte')
+ON DUPLICATE KEY UPDATE
+    nome = VALUES(nome);
+
+INSERT INTO Administrador (id_adm, CPF, telefone) VALUES
+    (1, '12345678909', '41999999999')
+ON DUPLICATE KEY UPDATE
+    CPF = VALUES(CPF),
+    telefone = VALUES(telefone);
+
+INSERT INTO Gerente_Locais (id_gerente, id_instituicao, escola) VALUES
+    (2, 1, 'Politecnica')
+ON DUPLICATE KEY UPDATE
+    id_instituicao = VALUES(id_instituicao),
+    escola = VALUES(escola);
+
+INSERT INTO Aluno (id_aluno, id_instituicao, curso) VALUES
+    (3, 1, 'Sistemas de Informacao')
+ON DUPLICATE KEY UPDATE
+    id_instituicao = VALUES(id_instituicao),
+    curso = VALUES(curso);
+
+INSERT INTO Organizador (id_organizador, id_usuario, id_organizacao) VALUES
+    (1, 4, 1)
+ON DUPLICATE KEY UPDATE
+    id_usuario = VALUES(id_usuario),
+    id_organizacao = VALUES(id_organizacao);
+
+INSERT INTO Locais (id_local, id_instituicao, tipo_escola, nome, capacidade, tipo, longitude, latitude) VALUES
+    (1, 1, 'Politecnica', 'Bloco 1', 120, 'Sala', '-49.2577', '-25.4420'),
+    (2, 1, 'Politecnica', 'Laboratorio de Informatica', 40, 'Laboratorio', '-49.2580', '-25.4425'),
+    (3, 1, 'Saude', 'Auditorio Central', 250, 'Auditorio', '-49.2584', '-25.4430'),
+    (4, 2, 'Tecnologia', 'Sala Maker', 30, 'Laboratorio', '-49.2600', '-25.4440'),
+    (5, 3, 'Humanas', 'Sala 101', 60, 'Sala', '-49.2610', '-25.4450')
+ON DUPLICATE KEY UPDATE
+    id_instituicao = VALUES(id_instituicao),
+    tipo_escola = VALUES(tipo_escola),
+    nome = VALUES(nome),
+    capacidade = VALUES(capacidade),
+    tipo = VALUES(tipo),
+    longitude = VALUES(longitude),
+    latitude = VALUES(latitude);
+
+INSERT INTO Evento (id_evento, nome, data, status, id_local, id_organizacao, id_organizador) VALUES
+    (1, 'Feira de Carreiras', '2026-06-15 19:00:00', 'ativo', 1, 1, 1),
+    (2, 'Palestra Tech', '2026-06-20 14:00:00', 'ativo', 3, 1, 1)
+ON DUPLICATE KEY UPDATE
+    nome = VALUES(nome),
+    data = VALUES(data),
+    status = VALUES(status),
+    id_local = VALUES(id_local),
+    id_organizacao = VALUES(id_organizacao),
+    id_organizador = VALUES(id_organizador);

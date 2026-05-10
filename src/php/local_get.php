@@ -7,7 +7,41 @@ $retorno = [
     "data" => [],
 ];
 
-if (isset($_GET["id"])) {
+if (isset($_GET["id_instituicao"])) {
+    $id_instituicao_raw = trim((string) $_GET["id_instituicao"]);
+    $id_instituicao = ctype_digit($id_instituicao_raw) ? (int) $id_instituicao_raw : 0;
+
+    if ($id_instituicao <= 0) {
+        $retorno = [
+            "status" => "not ok",
+            "mensagem" => "Instituicao invalida.",
+            "data" => [],
+        ];
+    } else {
+        $sql = "SELECT L.id_local, L.id_instituicao, L.tipo_escola, L.tipo, L.nome, L.capacidade, L.longitude, L.latitude,
+            I.nome AS nome_instituicao
+            FROM Locais L
+            LEFT JOIN Instituicao I ON L.id_instituicao = I.id_instituicao
+            WHERE L.id_instituicao = ?
+            ORDER BY L.nome";
+        $stmt = $conexao->prepare($sql);
+        $stmt->bind_param("i", $id_instituicao);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+
+        $data = [];
+        while ($row = $resultado->fetch_assoc()) {
+            $data[] = $row;
+        }
+        $stmt->close();
+
+        $retorno = [
+            "status" => "ok",
+            "mensagem" => "Lista carregada.",
+            "data" => $data,
+        ];
+    }
+} else if (isset($_GET["id"])) {
     $id_raw = trim((string) $_GET["id"]);
     $id = ctype_digit($id_raw) ? (int) $id_raw : 0;
 
