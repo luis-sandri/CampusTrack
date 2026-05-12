@@ -19,7 +19,7 @@ if (isset($_GET["id"])) {
             "data" => [],
         ];
     } else {
-        $sql = "SELECT u.id_usuario, u.nome, u.email, u.senha, g.id_instituicao, g.escola,
+        $sql = "SELECT u.id_usuario, u.nome, u.email, g.id_instituicao, g.escola,
             i.nome AS nome_instituicao
             FROM Usuario u
             INNER JOIN Gerente_Locais g ON g.id_gerente = u.id_usuario

@@ -27,7 +27,7 @@ if (isset($_GET["id"])) {
     } else if (!senha_valida($senha)) {
         $retorno = [
             "status" => "not ok",
-            "mensagem" => "A senha deve ter pelo menos 8 caracteres, 1 numero e 1 simbolo.",
+            "mensagem" => senha_mensagem(),
             "data" => [],
         ];
     } else {
@@ -47,6 +47,7 @@ if (isset($_GET["id"])) {
             $stmt->close();
 
             $stmt = $conexao->prepare("UPDATE Usuario SET nome = ?, email = ?, senha = ? WHERE id_usuario = ?");
+            $senha = senha_hash($senha);
             $stmt->bind_param("sssi", $nome, $email, $senha, $id);
             $stmt->execute();
             $stmt->close();

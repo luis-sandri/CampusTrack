@@ -54,6 +54,16 @@ function cnpj_valido(string $cnpj): bool
 
 function senha_valida(string $senha): bool
 {
-    return strlen($senha) >= 8 && preg_match("/\d/", $senha) && preg_match("/[^a-zA-Z0-9]/", $senha);
+    return strlen($senha) >= 8 && preg_match("/[A-Z]/", $senha) && preg_match("/\d/", $senha) && preg_match("/[^a-zA-Z0-9]/", $senha);
+}
+
+function senha_mensagem(): string
+{
+    return "A senha deve ter pelo menos 8 caracteres, 1 letra maiuscula, 1 numero e 1 simbolo.";
+}
+
+function senha_hash(string $senha): string
+{
+    return password_hash($senha, PASSWORD_BCRYPT);
 }
 

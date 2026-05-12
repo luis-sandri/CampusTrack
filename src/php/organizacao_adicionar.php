@@ -20,7 +20,7 @@ if ($nome === "" || $cnpj === "" || $senha === "") {
     $retorno["mensagem"] = "CNPJ invalido.";
 } else if (!senha_valida($senha)) {
     $retorno["status"] = "not ok";
-    $retorno["mensagem"] = "A senha deve ter pelo menos 8 caracteres, 1 numero e 1 simbolo.";
+    $retorno["mensagem"] = senha_mensagem();
 } else {
     $stmt = $conexao->prepare("SELECT id_organizacao FROM Organizacao WHERE cnpj = ?");
     $stmt->bind_param("s", $cnpj);
@@ -35,6 +35,7 @@ if ($nome === "" || $cnpj === "" || $senha === "") {
         $stmt->close();
 
         $stmt = $conexao->prepare("INSERT INTO Organizacao (nome, cnpj, senha) VALUES (?, ?, ?)");
+        $senha = senha_hash($senha);
         $stmt->bind_param("sss", $nome, $cnpj, $senha);
         $stmt->execute();
 

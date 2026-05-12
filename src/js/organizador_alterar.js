@@ -21,7 +21,7 @@ async function buscarDados(id) {
 
         var reg = resposta.data[0];
 
-        if (!reg || !reg.id_usuario || !reg.nome || !reg.email || !reg.senha) {
+        if (!reg || !reg.id_usuario || !reg.nome || !reg.email) {
             alert("ERRO! Dados do organizador incompletos no retorno do servidor.");
             return;
         }
@@ -29,7 +29,6 @@ async function buscarDados(id) {
         document.getElementById("organizador-id_usuario").value = reg.id_usuario;
         document.getElementById("organizador-nome").value = reg.nome;
         document.getElementById("organizador-email").value = reg.email;
-        document.getElementById("organizador-senha").value = reg.senha;
     } else {
         alert("ERRO! " + resposta.mensagem);
         if (resposta.mensagem === "Acesso negado.") {
@@ -44,7 +43,7 @@ document.getElementById("form-organizador").addEventListener("submit", function 
 });
 
 function validarSenha(senha) {
-    return senha.length >= 8 && /\d/.test(senha) && /[^a-zA-Z0-9]/.test(senha);
+    return senha.length >= 8 && /[A-Z]/.test(senha) && /\d/.test(senha) && /[^a-zA-Z0-9]/.test(senha);
 }
 
 async function alterar_organizador() {
@@ -64,7 +63,7 @@ async function alterar_organizador() {
     }
 
     if (!validarSenha(senha)) {
-        alert("ERRO! A senha deve ter pelo menos 8 caracteres, 1 numero e 1 simbolo.");
+        alert("ERRO! A senha deve ter pelo menos 8 caracteres, 1 letra maiuscula, 1 numero e 1 simbolo.");
         return;
     }
 

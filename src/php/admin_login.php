@@ -16,27 +16,32 @@ if ($email === "" || $senha === "") {
     $retorno["mensagem"] = "Preencha todos os campos.";
 } else {
     $stmt = $conexao->prepare("
-        SELECT u.id_usuario, u.nome, u.email
+        SELECT u.id_usuario, u.nome, u.email, u.senha
         FROM Usuario u
         INNER JOIN Administrador a ON a.id_adm = u.id_usuario
-        WHERE u.email = ? AND u.senha = ?
+        WHERE u.email = ?
     ");
 
-    $stmt->bind_param("ss", $email, $senha);
+    $stmt->bind_param("s", $email);
     $stmt->execute();
     $resultado = $stmt->get_result();
 
     if ($resultado->num_rows === 1) {
         $admin = $resultado->fetch_assoc();
 
-        // cria a sessao do administrador logado
-        $_SESSION["admin_logado"] = true;
-        $_SESSION["admin_id"] = $admin["id_usuario"];
-        $_SESSION["admin_email"] = $admin["email"];
-        $_SESSION["admin_nome"] = $admin["nome"];
+        if (password_verify($senha, $admin["senha"])) {
+            // cria a sessao do administrador logado
+            $_SESSION["admin_logado"] = true;
+            $_SESSION["admin_id"] = $admin["id_usuario"];
+            $_SESSION["admin_email"] = $admin["email"];
+            $_SESSION["admin_nome"] = $admin["nome"];
 
-        $retorno["status"] = "ok";
-        $retorno["mensagem"] = "Acesso validado com sucesso.";
+            $retorno["status"] = "ok";
+            $retorno["mensagem"] = "Acesso validado com sucesso.";
+        } else {
+            $retorno["status"] = "not ok";
+            $retorno["mensagem"] = "E-mail ou senha invÃ¡lidos.";
+        }
     } else {
         $retorno["status"] = "not ok";
         $retorno["mensagem"] = "E-mail ou senha inválidos.";

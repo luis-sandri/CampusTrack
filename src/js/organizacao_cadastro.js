@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function validarSenha(senha) {
-        return senha.length >= 8 && /\d/.test(senha) && /[^a-zA-Z0-9]/.test(senha);
+        return senha.length >= 8 && /[A-Z]/.test(senha) && /\d/.test(senha) && /[^a-zA-Z0-9]/.test(senha);
     }
 
     formCadastro.addEventListener("submit", function (e) {
@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (!validarSenha(senhaValor)) {
-            mostrarAlerta("A senha deve ter pelo menos 8 caracteres, 1 numero e 1 simbolo.", "danger");
+            mostrarAlerta("A senha deve ter pelo menos 8 caracteres, 1 letra maiuscula, 1 numero e 1 simbolo.", "danger");
             return;
         }
 

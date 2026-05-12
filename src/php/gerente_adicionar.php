@@ -26,7 +26,7 @@ if ($nome === "" || $email === "" || $senha === "" || $id_instituicao <= 0 || $e
     if (!senha_valida($senha)) {
         $retorno = [
             "status" => "not ok",
-            "mensagem" => "A senha deve ter pelo menos 8 caracteres, 1 numero e 1 simbolo.",
+            "mensagem" => senha_mensagem(),
             "data" => [],
         ];
         $conexao->close();
@@ -36,6 +36,7 @@ if ($nome === "" || $email === "" || $senha === "" || $id_instituicao <= 0 || $e
     }
 
     // inserir na tabela Usuario
+    $senha = senha_hash($senha);
     $stmt = $conexao->prepare(
         "INSERT INTO Usuario (nome, email, senha) VALUES (?, ?, ?)"
     );

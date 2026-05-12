@@ -19,22 +19,28 @@ if ($cnpj === "" || $senha === "") {
     $retorno["status"] = "not ok";
     $retorno["mensagem"] = "CNPJ invalido.";
 } else {
-    $stmt = $conexao->prepare("SELECT id_organizacao, nome, cnpj FROM Organizacao WHERE cnpj = ? AND senha = ?");
-    $stmt->bind_param("ss", $cnpj, $senha);
+    $stmt = $conexao->prepare("SELECT id_organizacao, nome, cnpj, senha FROM Organizacao WHERE cnpj = ?");
+    $stmt->bind_param("s", $cnpj);
     $stmt->execute();
     $resultado = $stmt->get_result();
 
     if ($resultado->num_rows === 1) {
         $organizacao = $resultado->fetch_assoc();
 
-        $_SESSION["organizacao_logada"] = true;
-        $_SESSION["organizacao_id"] = $organizacao["id_organizacao"];
-        $_SESSION["organizacao_nome"] = $organizacao["nome"];
-        $_SESSION["organizacao_cnpj"] = $organizacao["cnpj"];
+        if (password_verify($senha, $organizacao["senha"])) {
+            $_SESSION["organizacao_logada"] = true;
+            $_SESSION["organizacao_id"] = $organizacao["id_organizacao"];
+            $_SESSION["organizacao_nome"] = $organizacao["nome"];
+            $_SESSION["organizacao_cnpj"] = $organizacao["cnpj"];
 
-        $retorno["status"] = "ok";
-        $retorno["mensagem"] = "Acesso validado com sucesso.";
-        $retorno["data"] = [$organizacao];
+            unset($organizacao["senha"]);
+            $retorno["status"] = "ok";
+            $retorno["mensagem"] = "Acesso validado com sucesso.";
+            $retorno["data"] = [$organizacao];
+        } else {
+            $retorno["status"] = "not ok";
+            $retorno["mensagem"] = "CNPJ ou senha invalidos.";
+        }
     } else {
         $retorno["status"] = "not ok";
         $retorno["mensagem"] = "CNPJ ou senha invalidos.";

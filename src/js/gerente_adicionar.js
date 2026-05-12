@@ -41,7 +41,7 @@ document.getElementById("form-gerente").addEventListener("submit", function (eve
 });
 
 function validarSenha(senha) {
-    return senha.length >= 8 && /\d/.test(senha) && /[^a-zA-Z0-9]/.test(senha);
+    return senha.length >= 8 && /[A-Z]/.test(senha) && /\d/.test(senha) && /[^a-zA-Z0-9]/.test(senha);
 }
 
 async function adicionar_gerente() {
@@ -62,7 +62,7 @@ async function adicionar_gerente() {
     }
 
     if (!validarSenha(senha)) {
-        alert("ERRO! A senha deve ter pelo menos 8 caracteres, 1 numero e 1 simbolo.");
+        alert("ERRO! A senha deve ter pelo menos 8 caracteres, 1 letra maiuscula, 1 numero e 1 simbolo.");
         return;
     }
 

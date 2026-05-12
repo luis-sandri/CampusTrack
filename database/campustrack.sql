@@ -6,14 +6,16 @@ CREATE TABLE IF NOT EXISTS Usuario (
     id_usuario  INT          PRIMARY KEY AUTO_INCREMENT,
     nome        VARCHAR(255) NOT NULL,
     email       VARCHAR(255) NOT NULL,
-    senha       VARCHAR(30)  NOT NULL
+    senha       VARCHAR(255) NOT NULL,
+    UNIQUE KEY unique_usuario_email (email)
 );
 
 CREATE TABLE IF NOT EXISTS Organizacao (
     id_organizacao INT          PRIMARY KEY AUTO_INCREMENT,
     nome           VARCHAR(255) NOT NULL,    
     cnpj           VARCHAR(14)  NOT NULL,
-    senha          VARCHAR(30)  NOT NULL
+    senha          VARCHAR(255) NOT NULL,
+    UNIQUE KEY unique_organizacao_cnpj (cnpj)
 );
 
 CREATE TABLE IF NOT EXISTS Instituicao (
@@ -53,6 +55,7 @@ CREATE TABLE IF NOT EXISTS Administrador (
     id_adm    INT         PRIMARY KEY AUTO_INCREMENT,
     CPF       VARCHAR(11) NOT NULL,
     telefone  VARCHAR(11) NOT NULL,
+    UNIQUE KEY unique_administrador_cpf (CPF),
     CONSTRAINT fk_adm_usuario
         FOREIGN KEY (id_adm)
         REFERENCES Usuario(id_usuario)
@@ -110,25 +113,49 @@ CREATE TABLE IF NOT EXISTS Evento (
         ON DELETE CASCADE
 );
 
-ALTER TABLE Organizacao
-    ADD COLUMN IF NOT EXISTS senha VARCHAR(30) NOT NULL DEFAULT 'Teste@123';
+CREATE TABLE IF NOT EXISTS Comentario (
+    id_comentario INT PRIMARY KEY AUTO_INCREMENT,
+    id_aluno      INT          NOT NULL,
+    id_evento     INT          NOT NULL,
+    comentario    VARCHAR(140) NOT NULL,
+    CONSTRAINT fk_comentario_aluno
+        FOREIGN KEY (id_aluno)
+        REFERENCES Aluno(id_aluno)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_comentario_evento
+        FOREIGN KEY (id_evento)
+        REFERENCES Evento(id_evento)
+        ON DELETE CASCADE
+);
 
-ALTER TABLE Organizador
-    ADD COLUMN IF NOT EXISTS id_organizacao INT NOT NULL DEFAULT 1;
+CREATE TABLE IF NOT EXISTS Favorito (
+    id_favorito INT PRIMARY KEY AUTO_INCREMENT,
+    id_aluno    INT NOT NULL,
+    id_local    INT NOT NULL,
+    CONSTRAINT fk_favorito_aluno
+        FOREIGN KEY (id_aluno)
+        REFERENCES Aluno(id_aluno)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_favorito_local
+        FOREIGN KEY (id_local)
+        REFERENCES Locais(id_local)
+        ON DELETE CASCADE,
+    UNIQUE KEY unique_aluno_local (id_aluno, id_local)
+);
 
 -- Populacao simples para testes
 INSERT INTO Usuario (id_usuario, nome, email, senha) VALUES
-    (1, 'Administrador Teste', 'admin@campustrack.com', 'Teste@123'),
-    (2, 'Gerente Teste', 'gerente@campustrack.com', 'Teste@123'),
-    (3, 'Aluno Teste', 'aluno@pucpr.edu.br', 'Teste@123'),
-    (4, 'Organizador Teste', 'organizador@campustrack.com', 'Teste@123')
+    (1, 'Administrador Teste', 'admin@campustrack.com', '$2y$10$kmEF/BkfRsUGyMXxzMP14u7C0yDyHHeqCAt5oBDzKBlsUk4S.aZl.'),
+    (2, 'Gerente Teste', 'gerente@campustrack.com', '$2y$10$kmEF/BkfRsUGyMXxzMP14u7C0yDyHHeqCAt5oBDzKBlsUk4S.aZl.'),
+    (3, 'Aluno Teste', 'aluno@pucpr.edu.br', '$2y$10$kmEF/BkfRsUGyMXxzMP14u7C0yDyHHeqCAt5oBDzKBlsUk4S.aZl.'),
+    (4, 'Organizador Teste', 'organizador@campustrack.com', '$2y$10$kmEF/BkfRsUGyMXxzMP14u7C0yDyHHeqCAt5oBDzKBlsUk4S.aZl.')
 ON DUPLICATE KEY UPDATE
     nome = VALUES(nome),
     email = VALUES(email),
     senha = VALUES(senha);
 
 INSERT INTO Organizacao (id_organizacao, nome, cnpj, senha) VALUES
-    (1, 'Organizacao Teste', '11222333000181', 'Teste@123')
+    (1, 'Organizacao Teste', '11222333000181', '$2y$10$kmEF/BkfRsUGyMXxzMP14u7C0yDyHHeqCAt5oBDzKBlsUk4S.aZl.')
 ON DUPLICATE KEY UPDATE
     nome = VALUES(nome),
     cnpj = VALUES(cnpj),

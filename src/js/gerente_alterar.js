@@ -58,7 +58,6 @@ async function buscarDados(id) {
             !reg.id_usuario ||
             !reg.nome ||
             !reg.email ||
-            !reg.senha ||
             !reg.id_instituicao ||
             !reg.escola
         ) {
@@ -69,7 +68,6 @@ async function buscarDados(id) {
         document.getElementById("gerente-id_usuario").value = reg.id_usuario;
         document.getElementById("gerente-nome").value = reg.nome;
         document.getElementById("gerente-email").value = reg.email;
-        document.getElementById("gerente-senha").value = reg.senha;
         document.getElementById("gerente-id_instituicao").value = reg.id_instituicao;
         document.getElementById("gerente-escola").value = reg.escola;
     } else {
@@ -83,7 +81,7 @@ document.getElementById("form-gerente").addEventListener("submit", function (eve
 });
 
 function validarSenha(senha) {
-    return senha.length >= 8 && /\d/.test(senha) && /[^a-zA-Z0-9]/.test(senha);
+    return senha.length >= 8 && /[A-Z]/.test(senha) && /\d/.test(senha) && /[^a-zA-Z0-9]/.test(senha);
 }
 
 async function alterar_gerente() {
@@ -105,7 +103,7 @@ async function alterar_gerente() {
     }
 
     if (!validarSenha(senha)) {
-        alert("ERRO! A senha deve ter pelo menos 8 caracteres, 1 numero e 1 simbolo.");
+        alert("ERRO! A senha deve ter pelo menos 8 caracteres, 1 letra maiuscula, 1 numero e 1 simbolo.");
         return;
     }
 

@@ -26,7 +26,7 @@ if ($email === "" || $codigo_inserido === "") {
     $retorno["mensagem"] = "Nome, e-mail, senha, curso, instituicao e codigo sao obrigatorios.";
 } else if ($eh_cadastro && !senha_valida($senha)) {
     $retorno["status"] = "not ok";
-    $retorno["mensagem"] = "A senha deve ter pelo menos 8 caracteres, 1 numero e 1 simbolo.";
+    $retorno["mensagem"] = senha_mensagem();
 } else if (!isset($_SESSION["codigo_2fa_" . $email])) {
     $retorno["status"] = "not ok";
     $retorno["mensagem"] = "Nenhum codigo ativo encontrado para este e-mail.";
@@ -72,6 +72,7 @@ if ($email === "" || $codigo_inserido === "") {
                     $conexao->begin_transaction();
 
                     try {
+                        $senha = senha_hash($senha);
                         $stmt = $conexao->prepare("INSERT INTO Usuario (nome, email, senha) VALUES (?, ?, ?)");
                         $stmt->bind_param("sss", $nome, $email, $senha);
                         $stmt->execute();

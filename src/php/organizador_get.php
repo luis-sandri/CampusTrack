@@ -21,7 +21,7 @@ if (isset($_GET["id"])) {
             "data" => [],
         ];
     } else {
-        $sql = "SELECT u.id_usuario, u.nome, u.email, u.senha, o.id_organizador, o.id_organizacao
+        $sql = "SELECT u.id_usuario, u.nome, u.email, o.id_organizador, o.id_organizacao
             FROM Organizador o
             INNER JOIN Usuario u ON u.id_usuario = o.id_usuario
             WHERE u.id_usuario = ? AND o.id_organizacao = ?";

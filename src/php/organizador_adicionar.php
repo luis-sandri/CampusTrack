@@ -19,7 +19,7 @@ if ($nome === "" || $email === "" || $senha === "") {
     $retorno["mensagem"] = "Nome, e-mail e senha sao obrigatorios.";
 } else if (!senha_valida($senha)) {
     $retorno["status"] = "not ok";
-    $retorno["mensagem"] = "A senha deve ter pelo menos 8 caracteres, 1 numero e 1 simbolo.";
+    $retorno["mensagem"] = senha_mensagem();
 } else {
     $stmt = $conexao->prepare("SELECT id_usuario FROM Usuario WHERE email = ?");
     $stmt->bind_param("s", $email);
@@ -35,6 +35,7 @@ if ($nome === "" || $email === "" || $senha === "") {
         $conexao->begin_transaction();
 
         try {
+            $senha = senha_hash($senha);
             $stmt = $conexao->prepare("INSERT INTO Usuario (nome, email, senha) VALUES (?, ?, ?)");
             $stmt->bind_param("sss", $nome, $email, $senha);
             $stmt->execute();

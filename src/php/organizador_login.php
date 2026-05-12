@@ -16,28 +16,34 @@ if ($email === "" || $senha === "") {
     $retorno["mensagem"] = "Preencha todos os campos.";
 } else {
     $stmt = $conexao->prepare("
-        SELECT o.id_organizador, o.id_organizacao, u.id_usuario, u.nome, u.email
+        SELECT o.id_organizador, o.id_organizacao, u.id_usuario, u.nome, u.email, u.senha
         FROM Organizador o
         INNER JOIN Usuario u ON u.id_usuario = o.id_usuario
-        WHERE u.email = ? AND u.senha = ?
+        WHERE u.email = ?
     ");
-    $stmt->bind_param("ss", $email, $senha);
+    $stmt->bind_param("s", $email);
     $stmt->execute();
     $resultado = $stmt->get_result();
 
     if ($resultado->num_rows === 1) {
         $organizador = $resultado->fetch_assoc();
 
-        $_SESSION["organizador_logado"] = true;
-        $_SESSION["organizador_id"] = $organizador["id_organizador"];
-        $_SESSION["organizador_usuario_id"] = $organizador["id_usuario"];
-        $_SESSION["organizador_id_organizacao"] = $organizador["id_organizacao"];
-        $_SESSION["organizador_nome"] = $organizador["nome"];
-        $_SESSION["organizador_email"] = $organizador["email"];
+        if (password_verify($senha, $organizador["senha"])) {
+            $_SESSION["organizador_logado"] = true;
+            $_SESSION["organizador_id"] = $organizador["id_organizador"];
+            $_SESSION["organizador_usuario_id"] = $organizador["id_usuario"];
+            $_SESSION["organizador_id_organizacao"] = $organizador["id_organizacao"];
+            $_SESSION["organizador_nome"] = $organizador["nome"];
+            $_SESSION["organizador_email"] = $organizador["email"];
 
-        $retorno["status"] = "ok";
-        $retorno["mensagem"] = "Acesso validado com sucesso.";
-        $retorno["data"] = [$organizador];
+            unset($organizador["senha"]);
+            $retorno["status"] = "ok";
+            $retorno["mensagem"] = "Acesso validado com sucesso.";
+            $retorno["data"] = [$organizador];
+        } else {
+            $retorno["status"] = "not ok";
+            $retorno["mensagem"] = "E-mail ou senha invalidos.";
+        }
     } else {
         $retorno["status"] = "not ok";
         $retorno["mensagem"] = "E-mail ou senha invalidos.";
