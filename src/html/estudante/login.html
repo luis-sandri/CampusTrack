@@ -43,22 +43,22 @@
       <input type="hidden" name="email_verificacao" id="email_verificacao" value="">
 
       <div class="form-group">
-        <label for="nome" class="form-label fw-medium">Nome</label>
+        <label for="nome" class="form-label fw-medium">Nome <span class="text-danger">*</span></label>
         <input type="text" id="nome" name="nome" class="form-control form-control-lg bg-light" maxlength="255" required>
       </div>
 
       <div class="form-group">
-        <label for="email" class="form-label fw-medium">E-mail Institucional (@pucpr.edu.br)</label>
+        <label for="email" class="form-label fw-medium">E-mail Institucional (@pucpr.edu.br) <span class="text-danger">*</span></label>
         <input type="email" id="email" name="email" class="form-control form-control-lg bg-light" placeholder="nome@pucpr.edu.br" maxlength="255" required>
       </div>
 
       <div class="form-group">
-        <label for="senha" class="form-label fw-medium">Senha</label>
+        <label for="senha" class="form-label fw-medium">Senha <span class="text-danger">*</span></label>
         <input type="password" id="senha" name="senha" class="form-control form-control-lg bg-light" maxlength="30" required>
       </div>
 
       <div class="form-group">
-        <label for="curso" class="form-label fw-medium">Curso</label>
+        <label for="curso" class="form-label fw-medium">Curso <span class="text-danger">*</span></label>
         <input type="text" id="curso" name="curso" class="form-control form-control-lg bg-light" maxlength="80" required>
       </div>
 
@@ -67,7 +67,7 @@
       </button>
 
       <div class="form-group">
-        <label for="codigo" class="form-label fw-medium">Codigo de Verificacao (6 digitos)</label>
+        <label for="codigo" class="form-label fw-medium">Codigo de Verificacao (6 digitos) <span class="text-danger">*</span></label>
         <input type="text" id="codigo" name="codigo" class="form-control form-control-lg bg-light text-center fs-4" maxlength="6" pattern="\d{6}" placeholder="000000" autocomplete="off" required>
         <div class="form-text">O codigo foi enviado para o seu e-mail.</div>
       </div>
