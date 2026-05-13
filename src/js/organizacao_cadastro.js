@@ -5,6 +5,20 @@ document.addEventListener("DOMContentLoaded", function () {
     var inputCnpj = document.getElementById("organizacao-cnpj");
     var inputSenha = document.getElementById("organizacao-senha");
 
+    function mascaraCnpj(valor) {
+        valor = valor.replace(/\D/g, "");
+        valor = valor.substring(0, 14);
+        valor = valor.replace(/^(\d{2})(\d)/, "$1.$2");
+        valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+        valor = valor.replace(/\.(\d{3})(\d)/, ".$1/$2");
+        valor = valor.replace(/(\d{4})(\d)/, "$1-$2");
+        return valor;
+    }
+
+    inputCnpj.addEventListener("input", function () {
+        this.value = mascaraCnpj(this.value);
+    });
+
     function mostrarAlerta(mensagem, tipo) {
         alertaMsg.textContent = mensagem;
         alertaMsg.className = "alert w-100 alert-" + tipo;
