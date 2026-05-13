@@ -60,6 +60,10 @@ async function carregarDados() {
 }
 
 async function excluir(id) {
+    if (!confirm("Tem certeza que deseja excluir esta instituição? Esta ação não pode ser desfeita e removerá todos os registros associados.")) {
+        return;
+    }
+
     const retorno = await fetch("../../php/instituicao_excluir.php?id=" + id);
     const resposta = await retorno.json();
 

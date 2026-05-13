@@ -83,6 +83,10 @@ async function carregarDados() {
 }
 
 async function excluir(id) {
+    if (!confirm("Tem certeza que deseja excluir este local? Esta ação não pode ser desfeita.")) {
+        return;
+    }
+
     const retorno = await fetch("../../php/local_excluir.php?id=" + id);
     const resposta = await retorno.json();
 
