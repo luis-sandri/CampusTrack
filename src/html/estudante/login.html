@@ -32,7 +32,7 @@
         width="120"
         class="img-fluid mb-3"
       >
-      <h1 class="h4 fw-bold text-primary">Cadastro de Estudante</h1>
+      <h1 id="titulo-estudante" class="h4 fw-bold text-primary">Cadastro de Estudante</h1>
       <p class="text-muted" id="instrucao-texto">Preencha seus dados e valide o codigo enviado ao e-mail institucional.</p>
     </header>
 
@@ -40,9 +40,10 @@
 
     <form id="form-email" class="w-100 d-flex flex-column gap-3">
       <input type="hidden" name="id_instituicao" id="id_instituicao" value="">
+      <input type="hidden" name="modo" id="modo" value="cadastro">
       <input type="hidden" name="email_verificacao" id="email_verificacao" value="">
 
-      <div class="form-group">
+      <div id="campo-nome" class="form-group">
         <label for="nome" class="form-label fw-medium">Nome <span class="text-danger">*</span></label>
         <input type="text" id="nome" name="nome" class="form-control form-control-lg bg-light" maxlength="255" required>
       </div>
@@ -52,12 +53,12 @@
         <input type="email" id="email" name="email" class="form-control form-control-lg bg-light" placeholder="nome@pucpr.edu.br" maxlength="255" required>
       </div>
 
-      <div class="form-group">
+      <div id="campo-senha" class="form-group">
         <label for="senha" class="form-label fw-medium">Senha <span class="text-danger">*</span></label>
-        <input type="password" id="senha" name="senha" class="form-control form-control-lg bg-light" maxlength="30" required>
+        <input type="password" id="senha" name="senha" class="form-control form-control-lg bg-light" maxlength="30" title="Minimo de 8 caracteres, com letra maiuscula, numero e simbolo." required>
       </div>
 
-      <div class="form-group">
+      <div id="campo-curso" class="form-group">
         <label for="curso" class="form-label fw-medium">Curso <span class="text-danger">*</span></label>
         <input type="text" id="curso" name="curso" class="form-control form-control-lg bg-light" maxlength="80" required>
       </div>

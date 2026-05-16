@@ -1,5 +1,6 @@
 <?php
 session_start();
+include_once __DIR__ . "/valida_sessao_gerente.php";
 include_once __DIR__ . "/conexao.php";
 
 $retorno = [

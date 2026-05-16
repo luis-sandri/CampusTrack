@@ -1,4 +1,5 @@
 <?php
+include_once __DIR__ . "/valida_sessao_gerente.php";
 include_once __DIR__ . "/conexao.php";
 
 $retorno = [
@@ -15,11 +16,18 @@ $nome = isset($_POST["nome"]) ? trim((string) $_POST["nome"]) : "";
 $capacidade_raw = isset($_POST["capacidade"]) ? trim((string) $_POST["capacidade"]) : "";
 $longitude = isset($_POST["longitude"]) ? trim((string) $_POST["longitude"]) : "";
 $latitude = isset($_POST["latitude"]) ? trim((string) $_POST["latitude"]) : "";
+$id_instituicao_gerente = (int) $_SESSION["gerente_id_instituicao"];
 
 if ($id_instituicao <= 0 || $tipo_escola === "" || $tipo === "" || $nome === "" || $capacidade_raw === "" || !ctype_digit($capacidade_raw) || $longitude === "" || $latitude === "") {
     $retorno = [
         "status" => "not ok",
         "mensagem" => "Instituição, tipo de escola, tipo, nome, capacidade, longitude e latitude são obrigatórios.",
+        "data" => [],
+    ];
+} else if ($id_instituicao !== $id_instituicao_gerente) {
+    $retorno = [
+        "status" => "not ok",
+        "mensagem" => "Acesso negado para esta instituicao.",
         "data" => [],
     ];
 } else {

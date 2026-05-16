@@ -19,30 +19,46 @@ if (isset($_GET["id"])) {
             "data" => [],
         ];
     } else {
-        $stmt = $conexao->prepare("DELETE FROM Usuario WHERE id_usuario = ?");
+        $stmt = $conexao->prepare("SELECT id_gerente FROM Gerente_Locais WHERE id_gerente = ?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
+        $resultado = $stmt->get_result();
 
-        if ($stmt->affected_rows > 0) {
-            $retorno = [
-                "status" => "ok",
-                "mensagem" => "Gerente excluído com sucesso.",
-                "data" => [],
-            ];
-        } else {
+        if ($resultado->num_rows !== 1) {
             $retorno = [
                 "status" => "not ok",
-                "mensagem" => "Não foi possível excluir o gerente.",
+                "mensagem" => "Gerente nao encontrado.",
                 "data" => [],
             ];
-        }
+            $stmt->close();
+        } else {
+            $stmt->close();
 
-        $stmt->close();
+            $stmt = $conexao->prepare("DELETE FROM Usuario WHERE id_usuario = ?");
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+
+            if ($stmt->affected_rows > 0) {
+                $retorno = [
+                    "status" => "ok",
+                    "mensagem" => "Gerente excluido com sucesso.",
+                    "data" => [],
+                ];
+            } else {
+                $retorno = [
+                    "status" => "not ok",
+                    "mensagem" => "Nao foi possivel excluir o gerente.",
+                    "data" => [],
+                ];
+            }
+
+            $stmt->close();
+        }
     }
 } else {
     $retorno = [
         "status" => "not ok",
-        "mensagem" => "Não foi possível excluir sem ID.",
+        "mensagem" => "Nao foi possivel excluir sem ID.",
         "data" => [],
     ];
 }

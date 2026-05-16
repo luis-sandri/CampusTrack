@@ -30,17 +30,20 @@ if ($email === "" || $senha === "") {
         $admin = $resultado->fetch_assoc();
 
         if (password_verify($senha, $admin["senha"])) {
+            session_regenerate_id(true);
+
             // cria a sessao do administrador logado
             $_SESSION["admin_logado"] = true;
             $_SESSION["admin_id"] = $admin["id_usuario"];
             $_SESSION["admin_email"] = $admin["email"];
             $_SESSION["admin_nome"] = $admin["nome"];
+            $_SESSION["ultima_atividade"] = time();
 
             $retorno["status"] = "ok";
             $retorno["mensagem"] = "Acesso validado com sucesso.";
         } else {
             $retorno["status"] = "not ok";
-            $retorno["mensagem"] = "E-mail ou senha invÃ¡lidos.";
+            $retorno["mensagem"] = "E-mail ou senha inválidos.";
         }
     } else {
         $retorno["status"] = "not ok";

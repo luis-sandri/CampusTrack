@@ -66,6 +66,14 @@ async function carregarDados() {
 }
 
 async function excluir(id) {
+    var confirmado = typeof confirmarAcao === "function"
+        ? await confirmarAcao("Tem certeza que deseja excluir este gerente? Esta ação não pode ser desfeita.")
+        : confirm("Tem certeza que deseja excluir este gerente? Esta ação não pode ser desfeita.");
+
+    if (!confirmado) {
+        return;
+    }
+
     const retorno = await fetch("../../php/gerente_excluir.php?id=" + id);
     const resposta = await retorno.json();
 

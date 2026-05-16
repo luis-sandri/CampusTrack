@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+    valida_sessao();
     var url = new URLSearchParams(window.location.search);
     var id = url.get("id");
     buscarDados(id);
@@ -42,17 +43,12 @@ document.getElementById("form-organizador").addEventListener("submit", function 
     alterar_organizador();
 });
 
-function validarSenha(senha) {
-    return senha.length >= 8 && /[A-Z]/.test(senha) && /\d/.test(senha) && /[^a-zA-Z0-9]/.test(senha);
-}
-
 async function alterar_organizador() {
     var id = document.getElementById("organizador-id_usuario").value.trim();
     var nome = document.getElementById("organizador-nome").value.trim();
     var email = document.getElementById("organizador-email").value.trim();
-    var senha = document.getElementById("organizador-senha").value.trim();
 
-    if (id === "" || nome === "" || email === "" || senha === "") {
+    if (id === "" || nome === "" || email === "") {
         alert("ERRO! Todos os campos do organizador sao obrigatorios.");
         return;
     }
@@ -62,15 +58,9 @@ async function alterar_organizador() {
         return;
     }
 
-    if (!validarSenha(senha)) {
-        alert("ERRO! A senha deve ter pelo menos 8 caracteres, 1 letra maiuscula, 1 numero e 1 simbolo.");
-        return;
-    }
-
     const organizador_alterado = new FormData();
     organizador_alterado.append("nome", nome);
     organizador_alterado.append("email", email);
-    organizador_alterado.append("senha", senha);
 
     const retorno = await fetch("../../php/organizador_alterar.php?id=" + id, {
         method: "POST",

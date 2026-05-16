@@ -1,7 +1,6 @@
 <?php
 include_once __DIR__ . "/valida_sessao_admin.php";
 include_once __DIR__ . "/conexao.php";
-include_once __DIR__ . "/validacoes.php";
 
 $retorno = [
     "status" => "",
@@ -14,66 +13,78 @@ if (isset($_GET["id"])) {
     $id = ctype_digit($id_raw) ? (int) $id_raw : 0;
     $nome = isset($_POST["nome"]) ? trim((string) $_POST["nome"]) : "";
     $email = isset($_POST["email"]) ? trim((string) $_POST["email"]) : "";
-    $senha = isset($_POST["senha"]) ? trim((string) $_POST["senha"]) : "";
     $id_instituicao_raw = isset($_POST["id_instituicao"]) ? trim((string) $_POST["id_instituicao"]) : "";
     $id_instituicao = ctype_digit($id_instituicao_raw) ? (int) $id_instituicao_raw : 0;
     $escola = isset($_POST["escola"]) ? trim((string) $_POST["escola"]) : "";
 
-    if ($id <= 0 || $nome === "" || $email === "" || $senha === "" || $id_instituicao <= 0 || $escola === "") {
+    if ($id <= 0 || $nome === "" || $email === "" || $id_instituicao <= 0 || $escola === "") {
         $retorno = [
             "status" => "not ok",
-            "mensagem" => "Dados inválidos.",
+            "mensagem" => "Dados invalidos.",
             "data" => [],
         ];
     } else {
-        if (!senha_valida($senha)) {
-            $retorno = [
-                "status" => "not ok",
-                "mensagem" => senha_mensagem(),
-                "data" => [],
-            ];
-            $conexao->close();
-            header("Content-type:application/json;charset=utf-8");
-            echo json_encode($retorno);
-            exit;
-        }
-
-        // atualizar tabela Usuario
-        $senha = senha_hash($senha);
-        $stmt = $conexao->prepare(
-            "UPDATE Usuario SET nome = ?, email = ?, senha = ? WHERE id_usuario = ?"
-        );
-        $stmt->bind_param("sssi", $nome, $email, $senha, $id);
+        $stmt = $conexao->prepare("SELECT id_gerente FROM Gerente_Locais WHERE id_gerente = ?");
+        $stmt->bind_param("i", $id);
         $stmt->execute();
-        $stmt->close();
+        $resultado = $stmt->get_result();
 
-        // atualizar tabela Gerente_Locais
-        $stmt2 = $conexao->prepare(
-            "UPDATE Gerente_Locais SET id_instituicao = ?, escola = ? WHERE id_gerente = ?"
-        );
-        $stmt2->bind_param("isi", $id_instituicao, $escola, $id);
-        $stmt2->execute();
-
-        if ($stmt2->affected_rows >= 0) {
-            $retorno = [
-                "status" => "ok",
-                "mensagem" => "Gerente alterado com sucesso.",
-                "data" => [],
-            ];
-        } else {
+        if ($resultado->num_rows !== 1) {
             $retorno = [
                 "status" => "not ok",
-                "mensagem" => "Não foi possível alterar o gerente.",
+                "mensagem" => "Gerente nao encontrado.",
                 "data" => [],
             ];
-        }
+            $stmt->close();
+        } else {
+            $stmt->close();
 
-        $stmt2->close();
+            $stmt = $conexao->prepare("SELECT id_usuario FROM Usuario WHERE email = ? AND id_usuario <> ?");
+            $stmt->bind_param("si", $email, $id);
+            $stmt->execute();
+            $resultado = $stmt->get_result();
+
+            if ($resultado->num_rows > 0) {
+                $retorno = [
+                    "status" => "not ok",
+                    "mensagem" => "Ja existe um usuario cadastrado com este e-mail.",
+                    "data" => [],
+                ];
+                $stmt->close();
+            } else {
+                $stmt->close();
+
+                $stmt = $conexao->prepare("UPDATE Usuario SET nome = ?, email = ? WHERE id_usuario = ?");
+                $stmt->bind_param("ssi", $nome, $email, $id);
+                $stmt->execute();
+                $stmt->close();
+
+                $stmt2 = $conexao->prepare("UPDATE Gerente_Locais SET id_instituicao = ?, escola = ? WHERE id_gerente = ?");
+                $stmt2->bind_param("isi", $id_instituicao, $escola, $id);
+                $stmt2->execute();
+
+                if ($stmt2->affected_rows >= 0) {
+                    $retorno = [
+                        "status" => "ok",
+                        "mensagem" => "Gerente alterado com sucesso.",
+                        "data" => [],
+                    ];
+                } else {
+                    $retorno = [
+                        "status" => "not ok",
+                        "mensagem" => "Nao foi possivel alterar o gerente.",
+                        "data" => [],
+                    ];
+                }
+
+                $stmt2->close();
+            }
+        }
     }
 } else {
     $retorno = [
         "status" => "not ok",
-        "mensagem" => "Não foi possível alterar o registro sem ID.",
+        "mensagem" => "Nao foi possivel alterar o registro sem ID.",
         "data" => [],
     ];
 }

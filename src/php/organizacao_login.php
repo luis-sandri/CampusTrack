@@ -28,10 +28,13 @@ if ($cnpj === "" || $senha === "") {
         $organizacao = $resultado->fetch_assoc();
 
         if (password_verify($senha, $organizacao["senha"])) {
+            session_regenerate_id(true);
+
             $_SESSION["organizacao_logada"] = true;
             $_SESSION["organizacao_id"] = $organizacao["id_organizacao"];
             $_SESSION["organizacao_nome"] = $organizacao["nome"];
             $_SESSION["organizacao_cnpj"] = $organizacao["cnpj"];
+            $_SESSION["ultima_atividade"] = time();
 
             unset($organizacao["senha"]);
             $retorno["status"] = "ok";

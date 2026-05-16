@@ -9,7 +9,7 @@
     :root { --bs-primary: #1e40af; }
   </style>
 </head>
-<body>
+<body data-perfil="admin">
   <nav class="navbar bg-body-tertiary border-bottom">
     <div class="container-fluid">
       <a class="navbar-brand fw-bold text-primary fs-4" href="../index.html">CT</a>
@@ -47,7 +47,7 @@
           <div class="row">
             <div class="col-md-6 mb-3">
               <label for="gerente-senha" class="form-label">Senha <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="gerente-senha" maxlength="30" required>
+              <input type="password" class="form-control" id="gerente-senha" maxlength="30" title="Minimo de 8 caracteres, com letra maiuscula, numero e simbolo." required>
             </div>
             <div class="col-md-6 mb-3">
               <label for="gerente-id_instituicao" class="form-label">Instituição <span class="text-danger">*</span></label>

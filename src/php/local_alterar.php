@@ -1,4 +1,5 @@
 <?php
+include_once __DIR__ . "/valida_sessao_gerente.php";
 include_once __DIR__ . "/conexao.php";
 
 $retorno = [
@@ -18,6 +19,7 @@ if (isset($_GET["id"])) {
     $capacidade_raw = isset($_POST["capacidade"]) ? trim((string) $_POST["capacidade"]) : "";
     $longitude = isset($_POST["longitude"]) ? trim((string) $_POST["longitude"]) : "";
     $latitude = isset($_POST["latitude"]) ? trim((string) $_POST["latitude"]) : "";
+    $id_instituicao_gerente = (int) $_SESSION["gerente_id_instituicao"];
 
     if ($id <= 0 || $id_instituicao <= 0 || $tipo_escola === "" || $tipo === "" || $nome === "" || $capacidade_raw === "" || !ctype_digit($capacidade_raw) || $longitude === "" || $latitude === "") {
         $retorno = [
@@ -25,13 +27,19 @@ if (isset($_GET["id"])) {
             "mensagem" => "Dados inválidos.",
             "data" => [],
         ];
+    } else if ($id_instituicao !== $id_instituicao_gerente) {
+        $retorno = [
+            "status" => "not ok",
+            "mensagem" => "Acesso negado para esta instituicao.",
+            "data" => [],
+        ];
     } else {
         $capacidade = (int) $capacidade_raw;
         $stmt = $conexao->prepare(
             "UPDATE Locais SET id_instituicao = ?, tipo_escola = ?, tipo = ?, nome = ?, capacidade = ?, longitude = ?, latitude = ?
-             WHERE id_local = ?"
+             WHERE id_local = ? AND id_instituicao = ?"
         );
-        $stmt->bind_param("isssissi", $id_instituicao, $tipo_escola, $tipo, $nome, $capacidade, $longitude, $latitude, $id);
+        $stmt->bind_param("isssissii", $id_instituicao, $tipo_escola, $tipo, $nome, $capacidade, $longitude, $latitude, $id, $id_instituicao_gerente);
 
         $stmt->execute();
 

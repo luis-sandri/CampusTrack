@@ -19,63 +19,60 @@ $escola = isset($_POST["escola"]) ? trim((string) $_POST["escola"]) : "";
 if ($nome === "" || $email === "" || $senha === "" || $id_instituicao <= 0 || $escola === "") {
     $retorno = [
         "status" => "not ok",
-        "mensagem" => "Nome, e-mail, senha, instituição e escola são obrigatórios.",
+        "mensagem" => "Nome, e-mail, senha, instituicao e escola sao obrigatorios.",
+        "data" => [],
+    ];
+} else if (!senha_valida($senha)) {
+    $retorno = [
+        "status" => "not ok",
+        "mensagem" => senha_mensagem(),
         "data" => [],
     ];
 } else {
-    if (!senha_valida($senha)) {
+    $stmt = $conexao->prepare("SELECT id_usuario FROM Usuario WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $resultado = $stmt->get_result();
+
+    if ($resultado->num_rows > 0) {
         $retorno = [
             "status" => "not ok",
-            "mensagem" => senha_mensagem(),
+            "mensagem" => "Ja existe um usuario cadastrado com este e-mail.",
             "data" => [],
         ];
-        $conexao->close();
-        header("Content-type:application/json;charset=utf-8");
-        echo json_encode($retorno);
-        exit;
-    }
-
-    // inserir na tabela Usuario
-    $senha = senha_hash($senha);
-    $stmt = $conexao->prepare(
-        "INSERT INTO Usuario (nome, email, senha) VALUES (?, ?, ?)"
-    );
-    $stmt->bind_param("sss", $nome, $email, $senha);
-    $stmt->execute();
-
-    if ($stmt->affected_rows > 0) {
-        $id_usuario = (int) $conexao->insert_id;
         $stmt->close();
+    } else {
+        $stmt->close();
+        $conexao->begin_transaction();
 
-        // inserir na tabela Gerente_Locais
-        $stmt2 = $conexao->prepare(
-            "INSERT INTO Gerente_Locais (id_gerente, id_instituicao, escola) VALUES (?, ?, ?)"
-        );
-        $stmt2->bind_param("iis", $id_usuario, $id_instituicao, $escola);
-        $stmt2->execute();
+        try {
+            $senha = senha_hash($senha);
+            $stmt = $conexao->prepare("INSERT INTO Usuario (nome, email, senha) VALUES (?, ?, ?)");
+            $stmt->bind_param("sss", $nome, $email, $senha);
+            $stmt->execute();
+            $id_usuario = (int) $conexao->insert_id;
+            $stmt->close();
 
-        if ($stmt2->affected_rows > 0) {
+            $stmt = $conexao->prepare("INSERT INTO Gerente_Locais (id_gerente, id_instituicao, escola) VALUES (?, ?, ?)");
+            $stmt->bind_param("iis", $id_usuario, $id_instituicao, $escola);
+            $stmt->execute();
+            $stmt->close();
+
+            $conexao->commit();
+
             $retorno = [
                 "status" => "ok",
                 "mensagem" => "Gerente cadastrado com sucesso.",
                 "data" => [["id_usuario" => $id_usuario]],
             ];
-        } else {
+        } catch (Throwable $e) {
+            $conexao->rollback();
             $retorno = [
                 "status" => "not ok",
-                "mensagem" => "Não foi possível cadastrar o gerente.",
+                "mensagem" => "Nao foi possivel cadastrar o gerente.",
                 "data" => [],
             ];
         }
-
-        $stmt2->close();
-    } else {
-        $retorno = [
-            "status" => "not ok",
-            "mensagem" => "Não foi possível cadastrar o usuário. E-mail pode já estar em uso.",
-            "data" => [],
-        ];
-        $stmt->close();
     }
 }
 

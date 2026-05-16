@@ -80,19 +80,14 @@ document.getElementById("form-gerente").addEventListener("submit", function (eve
     alterar_gerente();
 });
 
-function validarSenha(senha) {
-    return senha.length >= 8 && /[A-Z]/.test(senha) && /\d/.test(senha) && /[^a-zA-Z0-9]/.test(senha);
-}
-
 async function alterar_gerente() {
     var id = document.getElementById("gerente-id_usuario").value.trim();
     var nome = document.getElementById("gerente-nome").value.trim();
     var email = document.getElementById("gerente-email").value.trim();
-    var senha = document.getElementById("gerente-senha").value.trim();
     var id_instituicao = document.getElementById("gerente-id_instituicao").value.trim();
     var escola = document.getElementById("gerente-escola").value.trim();
 
-    if (id === "" || nome === "" || email === "" || senha === "" || id_instituicao === "" || escola === "") {
+    if (id === "" || nome === "" || email === "" || id_instituicao === "" || escola === "") {
         alert("ERRO! Todos os campos do gerente são obrigatórios.");
         return;
     }
@@ -102,15 +97,9 @@ async function alterar_gerente() {
         return;
     }
 
-    if (!validarSenha(senha)) {
-        alert("ERRO! A senha deve ter pelo menos 8 caracteres, 1 letra maiuscula, 1 numero e 1 simbolo.");
-        return;
-    }
-
     const gerente_alterado = new FormData();
     gerente_alterado.append("nome", nome);
     gerente_alterado.append("email", email);
-    gerente_alterado.append("senha", senha);
     gerente_alterado.append("id_instituicao", id_instituicao);
     gerente_alterado.append("escola", escola);
 

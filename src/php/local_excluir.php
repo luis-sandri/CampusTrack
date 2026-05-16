@@ -1,4 +1,5 @@
 <?php
+include_once __DIR__ . "/valida_sessao_gerente.php";
 include_once __DIR__ . "/conexao.php";
 
 $retorno = [
@@ -18,8 +19,9 @@ if (isset($_GET["id"])) {
             "data" => [],
         ];
     } else {
-        $stmt = $conexao->prepare("DELETE FROM Locais WHERE id_local = ?");
-        $stmt->bind_param("i", $id);
+        $id_instituicao_gerente = (int) $_SESSION["gerente_id_instituicao"];
+        $stmt = $conexao->prepare("DELETE FROM Locais WHERE id_local = ? AND id_instituicao = ?");
+        $stmt->bind_param("ii", $id, $id_instituicao_gerente);
         $stmt->execute();
 
         if ($stmt->affected_rows > 0) {

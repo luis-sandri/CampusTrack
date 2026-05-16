@@ -1,12 +1,4 @@
 <?php
-session_start();
+include_once __DIR__ . "/sessao.php";
 
-if (!isset($_SESSION["admin_logado"]) || $_SESSION["admin_logado"] !== true) {
-    header("Content-type:application/json;charset=utf-8");
-    echo json_encode([
-        "status" => "not ok",
-        "mensagem" => "Acesso negado.",
-        "data" => [],
-    ]);
-    exit;
-}
+exigir_sessao("admin");

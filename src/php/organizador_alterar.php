@@ -1,7 +1,6 @@
 <?php
 include_once __DIR__ . "/valida_sessao_organizacao.php";
 include_once __DIR__ . "/conexao.php";
-include_once __DIR__ . "/validacoes.php";
 
 $retorno = [
     "status" => "",
@@ -16,18 +15,11 @@ if (isset($_GET["id"])) {
     $id = ctype_digit($id_raw) ? (int) $id_raw : 0;
     $nome = isset($_POST["nome"]) ? trim((string) $_POST["nome"]) : "";
     $email = isset($_POST["email"]) ? trim((string) $_POST["email"]) : "";
-    $senha = isset($_POST["senha"]) ? trim((string) $_POST["senha"]) : "";
 
-    if ($id <= 0 || $nome === "" || $email === "" || $senha === "") {
+    if ($id <= 0 || $nome === "" || $email === "") {
         $retorno = [
             "status" => "not ok",
             "mensagem" => "Dados invalidos.",
-            "data" => [],
-        ];
-    } else if (!senha_valida($senha)) {
-        $retorno = [
-            "status" => "not ok",
-            "mensagem" => senha_mensagem(),
             "data" => [],
         ];
     } else {
@@ -46,17 +38,32 @@ if (isset($_GET["id"])) {
         } else {
             $stmt->close();
 
-            $stmt = $conexao->prepare("UPDATE Usuario SET nome = ?, email = ?, senha = ? WHERE id_usuario = ?");
-            $senha = senha_hash($senha);
-            $stmt->bind_param("sssi", $nome, $email, $senha, $id);
+            $stmt = $conexao->prepare("SELECT id_usuario FROM Usuario WHERE email = ? AND id_usuario <> ?");
+            $stmt->bind_param("si", $email, $id);
             $stmt->execute();
-            $stmt->close();
+            $resultado = $stmt->get_result();
 
-            $retorno = [
-                "status" => "ok",
-                "mensagem" => "Organizador alterado com sucesso.",
-                "data" => [],
-            ];
+            if ($resultado->num_rows > 0) {
+                $retorno = [
+                    "status" => "not ok",
+                    "mensagem" => "Ja existe um usuario cadastrado com este e-mail.",
+                    "data" => [],
+                ];
+                $stmt->close();
+            } else {
+                $stmt->close();
+
+                $stmt = $conexao->prepare("UPDATE Usuario SET nome = ?, email = ? WHERE id_usuario = ?");
+                $stmt->bind_param("ssi", $nome, $email, $id);
+                $stmt->execute();
+                $stmt->close();
+
+                $retorno = [
+                    "status" => "ok",
+                    "mensagem" => "Organizador alterado com sucesso.",
+                    "data" => [],
+                ];
+            }
         }
     }
 } else {

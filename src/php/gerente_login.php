@@ -30,18 +30,21 @@ if ($email === "" || $senha === "") {
         $gerente = $resultado->fetch_assoc();
 
         if (password_verify($senha, $gerente["senha"])) {
+            session_regenerate_id(true);
+
             // cria a sessao do gerente logado
             $_SESSION["gerente_logado"] = true;
             $_SESSION["gerente_id"] = $gerente["id_usuario"];
             $_SESSION["gerente_email"] = $gerente["email"];
             $_SESSION["gerente_nome"] = $gerente["nome"];
             $_SESSION["gerente_id_instituicao"] = $gerente["id_instituicao"];
+            $_SESSION["ultima_atividade"] = time();
 
             $retorno["status"] = "ok";
             $retorno["mensagem"] = "Acesso validado com sucesso.";
         } else {
             $retorno["status"] = "not ok";
-            $retorno["mensagem"] = "E-mail ou senha invÃ¡lidos.";
+            $retorno["mensagem"] = "E-mail ou senha inválidos.";
         }
     } else {
         $retorno["status"] = "not ok";

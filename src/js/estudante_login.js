@@ -12,11 +12,24 @@ document.addEventListener("DOMContentLoaded", function () {
     var listaLocais = document.getElementById("lista-locais");
     var mapaLocais = document.getElementById("mapa-locais");
     var mapaVazio = document.getElementById("mapa-vazio");
-    var btnCadastroAluno = document.getElementById("btn-cadastro-aluno");
     var linkVoltarMapa = document.getElementById("link-voltar-mapa");
+    var linkCadastroAluno = document.getElementById("link-cadastro-aluno");
+    var linkLoginAluno = document.getElementById("link-login-aluno");
+    var btnMenuEstudante = document.getElementById("btn-menu-estudante");
+    var itemSeparadorLogoutAluno = document.getElementById("item-separador-logout-aluno");
+    var itemLogoutAluno = document.getElementById("item-logout-aluno");
+    var btnLogoutAluno = document.getElementById("btn-logout-aluno");
+    var inputModo = document.getElementById("modo");
+    var tituloEstudante = document.getElementById("titulo-estudante");
 
     var urlParams = new URLSearchParams(window.location.search);
     var idInstituicao = urlParams.get("id_instituicao") || urlParams.get("id");
+    var modoAluno = urlParams.get("modo") === "login" ? "login" : "cadastro";
+    var textoInstrucaoInicial = modoAluno === "login"
+        ? "Informe seu e-mail institucional e senha para receber o codigo de acesso."
+        : "Preencha seus dados e valide o codigo enviado ao e-mail institucional.";
+
+    configurarModoAluno();
 
     if (idInstituicao && /^\d+$/.test(idInstituicao)) {
         if (inputIdInstituicao) {
@@ -28,9 +41,7 @@ document.addEventListener("DOMContentLoaded", function () {
             idInstituicaoTexto.textContent = idInstituicao;
         }
 
-        if (btnCadastroAluno) {
-            btnCadastroAluno.href = "../estudante/login.html?id_instituicao=" + encodeURIComponent(idInstituicao);
-        }
+        atualizarLinksAluno(idInstituicao);
 
         if (linkVoltarMapa) {
             linkVoltarMapa.href = "../visitante/instituicao.html?id=" + encodeURIComponent(idInstituicao);
@@ -38,9 +49,76 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (mapaLocais) {
             carregarLocais(idInstituicao);
+            verificarSessaoAluno();
         }
     } else if (inputIdInstituicao) {
         mostrarAlerta("Instituicao nao informada ou invalida.", "danger");
+    }
+
+    function configurarModoAluno() {
+        if (inputModo) {
+            inputModo.value = modoAluno;
+        }
+
+        if (tituloEstudante) {
+            tituloEstudante.textContent = modoAluno === "login" ? "Entrada de Estudante" : "Cadastro de Estudante";
+        }
+
+        if (instrucaoTexto) {
+            instrucaoTexto.textContent = textoInstrucaoInicial;
+        }
+
+        if (btnVerificarCodigo) {
+            btnVerificarCodigo.textContent = modoAluno === "login" ? "Entrar" : "Validar";
+        }
+
+        if (inputModo || tituloEstudante) {
+            document.title = modoAluno === "login" ? "CampusTrack - Entrada de Estudante" : "CampusTrack - Cadastro de Estudante";
+        }
+
+        alternarCampoCadastro("nome", modoAluno !== "login");
+        alternarCampoCadastro("senha", true);
+        alternarCampoCadastro("curso", modoAluno !== "login");
+
+        var inputSenha = document.getElementById("senha");
+        if (inputSenha) {
+            inputSenha.title = modoAluno === "login"
+                ? "Informe sua senha cadastrada."
+                : "Minimo de 8 caracteres, com letra maiuscula, numero e simbolo.";
+        }
+    }
+
+    function alternarCampoCadastro(idCampo, ativo) {
+        var campo = document.getElementById(idCampo);
+        if (!campo) {
+            return;
+        }
+
+        var grupo = campo.closest(".form-group");
+
+        campo.disabled = !ativo;
+        campo.required = ativo;
+
+        if (grupo) {
+            if (ativo) {
+                grupo.classList.remove("d-none");
+            } else {
+                grupo.classList.add("d-none");
+            }
+        }
+    }
+
+    function atualizarLinksAluno(id) {
+        var queryCadastro = "?id_instituicao=" + encodeURIComponent(id) + "&modo=cadastro";
+        var queryLogin = "?id_instituicao=" + encodeURIComponent(id) + "&modo=login";
+
+        if (linkCadastroAluno) {
+            linkCadastroAluno.href = "../estudante/login.html" + queryCadastro;
+        }
+
+        if (linkLoginAluno) {
+            linkLoginAluno.href = "../estudante/login.html" + queryLogin;
+        }
     }
 
     function mostrarAlerta(mensagem, tipo) {
@@ -63,8 +141,12 @@ document.addEventListener("DOMContentLoaded", function () {
     function validarDadosCadastro() {
         var emailValor = inputEmail ? inputEmail.value.trim() : "";
         var idInstituicaoValor = inputIdInstituicao ? inputIdInstituicao.value.trim() : "";
+        var inputNome = document.getElementById("nome");
         var inputSenha = document.getElementById("senha");
+        var inputCurso = document.getElementById("curso");
+        var nomeValor = inputNome ? inputNome.value.trim() : "";
         var senhaValor = inputSenha ? inputSenha.value.trim() : "";
+        var cursoValor = inputCurso ? inputCurso.value.trim() : "";
 
         if (idInstituicaoValor === "" || !/^\d+$/.test(idInstituicaoValor)) {
             mostrarAlerta("Instituicao nao informada ou invalida.", "danger");
@@ -76,7 +158,17 @@ document.addEventListener("DOMContentLoaded", function () {
             return false;
         }
 
-        if (inputSenha && !validarSenha(senhaValor)) {
+        if (modoAluno === "login" && senhaValor === "") {
+            mostrarAlerta("E-mail e senha sao obrigatorios.", "danger");
+            return false;
+        }
+
+        if (modoAluno !== "login" && (nomeValor === "" || senhaValor === "" || cursoValor === "")) {
+            mostrarAlerta("Nome, e-mail, senha e curso sao obrigatorios.", "danger");
+            return false;
+        }
+
+        if (modoAluno !== "login" && inputSenha && !validarSenha(senhaValor)) {
             mostrarAlerta("A senha deve ter pelo menos 8 caracteres, 1 letra maiuscula, 1 numero e 1 simbolo.", "danger");
             return false;
         }
@@ -106,6 +198,11 @@ document.addEventListener("DOMContentLoaded", function () {
         var formData = new FormData();
         formData.append("email", inputEmail.value.trim());
         formData.append("id_instituicao", inputIdInstituicao.value.trim());
+        formData.append("modo", modoAluno);
+        var inputSenha = document.getElementById("senha");
+        if (inputSenha) {
+            formData.append("senha", inputSenha.value.trim());
+        }
 
         fetch("../../php/codigo_enviar.php", {
             method: "POST",
@@ -148,6 +245,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         var formData = new FormData(formulario);
         formData.set("email_verificacao", inputEmail.value.trim());
+        formData.set("id_instituicao", inputIdInstituicao.value.trim());
+        formData.set("modo", modoAluno);
 
         fetch("../../php/codigo_verificar.php", {
             method: "POST",
@@ -161,7 +260,16 @@ document.addEventListener("DOMContentLoaded", function () {
             btnVerificarCodigo.disabled = false;
 
             if (data.status === "ok") {
-                mostrarAlerta(data.mensagem || "Cadastro validado com sucesso.", "success");
+                mostrarAlerta(data.mensagem || "Acesso validado com sucesso.", "success");
+                setTimeout(function () {
+                    if (linkVoltarMapa && linkVoltarMapa.getAttribute("href")) {
+                        window.location.href = linkVoltarMapa.getAttribute("href");
+                    } else if (idInstituicao && /^\d+$/.test(idInstituicao)) {
+                        window.location.href = "../visitante/instituicao.html?id=" + encodeURIComponent(idInstituicao);
+                    } else {
+                        window.location.href = "../index.html";
+                    }
+                }, 1000);
             } else {
                 mostrarAlerta(data.mensagem || "Codigo invalido.", "danger");
             }
@@ -237,6 +345,63 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    function verificarSessaoAluno() {
+        fetch("../../php/sessao_status.php?perfil=aluno")
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (resposta) {
+            if (resposta.status !== "ok" || !Array.isArray(resposta.data) || resposta.data.length === 0) {
+                document.body.setAttribute("data-aluno-logado", "false");
+                exibirLogoutAluno(false);
+                return;
+            }
+
+            document.body.setAttribute("data-aluno-logado", "true");
+            document.body.setAttribute("data-aluno-nome", resposta.data[0].nome || "");
+
+            if (btnMenuEstudante) {
+                btnMenuEstudante.textContent = resposta.data[0].nome || "Estudante";
+            }
+
+            desabilitarLinkAluno(linkCadastroAluno);
+            desabilitarLinkAluno(linkLoginAluno);
+            exibirLogoutAluno(true);
+        })
+        .catch(function () {
+            document.body.setAttribute("data-aluno-logado", "false");
+            exibirLogoutAluno(false);
+        });
+    }
+
+    function exibirLogoutAluno(ativo) {
+        alternarItemLogout(itemSeparadorLogoutAluno, ativo);
+        alternarItemLogout(itemLogoutAluno, ativo);
+    }
+
+    function alternarItemLogout(item, ativo) {
+        if (!item) {
+            return;
+        }
+
+        if (ativo) {
+            item.classList.remove("d-none");
+        } else {
+            item.classList.add("d-none");
+        }
+    }
+
+    function desabilitarLinkAluno(link) {
+        if (!link) {
+            return;
+        }
+
+        link.classList.add("disabled");
+        link.removeAttribute("href");
+        link.setAttribute("aria-disabled", "true");
+        link.setAttribute("tabindex", "-1");
+    }
+
     function adicionarPinoNoMapa(local, indice, total) {
         if (!mapaLocais) {
             return;
@@ -266,6 +431,30 @@ document.addEventListener("DOMContentLoaded", function () {
             .replace(/'/g, "&#039;");
     }
 
+    function sairAluno() {
+        if (btnLogoutAluno) {
+            btnLogoutAluno.disabled = true;
+        }
+
+        fetch("../../php/logout.php")
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function () {
+            if (idInstituicao && /^\d+$/.test(idInstituicao)) {
+                window.location.href = "../visitante/instituicao.html?id=" + encodeURIComponent(idInstituicao);
+            } else {
+                window.location.href = "../index.html";
+            }
+        })
+        .catch(function (error) {
+            if (btnLogoutAluno) {
+                btnLogoutAluno.disabled = false;
+            }
+            console.error(error);
+        });
+    }
+
     if (btnEnviarEmail) {
         btnEnviarEmail.addEventListener("click", enviarCodigo);
     }
@@ -290,9 +479,13 @@ document.addEventListener("DOMContentLoaded", function () {
             formEmail.classList.remove("d-none");
             document.getElementById("codigo").value = "";
             if (instrucaoTexto) {
-                instrucaoTexto.textContent = "Informe seu e-mail institucional para acessar.";
+                instrucaoTexto.textContent = textoInstrucaoInicial;
             }
             esconderAlerta();
         });
+    }
+
+    if (btnLogoutAluno) {
+        btnLogoutAluno.addEventListener("click", sairAluno);
     }
 });

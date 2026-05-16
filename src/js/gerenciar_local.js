@@ -8,7 +8,7 @@ document.getElementById("novo").addEventListener("click", () => {
 });
 
 async function carregarDados() {
-    const retorno = await fetch("../../php/local_get.php");
+    const retorno = await fetch("../../php/local_get.php?gerente=1");
     const resposta = await retorno.json();
 
     if (resposta.status == "ok") {
@@ -83,7 +83,11 @@ async function carregarDados() {
 }
 
 async function excluir(id) {
-    if (!confirm("Tem certeza que deseja excluir este local? Esta ação não pode ser desfeita.")) {
+    var confirmado = typeof confirmarAcao === "function"
+        ? await confirmarAcao("Tem certeza que deseja excluir este local? Esta ação não pode ser desfeita.")
+        : confirm("Tem certeza que deseja excluir este local? Esta ação não pode ser desfeita.");
+
+    if (!confirmado) {
         return;
     }
 

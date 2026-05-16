@@ -29,12 +29,15 @@ if ($email === "" || $senha === "") {
         $organizador = $resultado->fetch_assoc();
 
         if (password_verify($senha, $organizador["senha"])) {
+            session_regenerate_id(true);
+
             $_SESSION["organizador_logado"] = true;
             $_SESSION["organizador_id"] = $organizador["id_organizador"];
             $_SESSION["organizador_usuario_id"] = $organizador["id_usuario"];
             $_SESSION["organizador_id_organizacao"] = $organizador["id_organizacao"];
             $_SESSION["organizador_nome"] = $organizador["nome"];
             $_SESSION["organizador_email"] = $organizador["email"];
+            $_SESSION["ultima_atividade"] = time();
 
             unset($organizador["senha"]);
             $retorno["status"] = "ok";

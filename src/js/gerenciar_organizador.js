@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+    valida_sessao();
     carregarDados();
 });
 
@@ -64,6 +65,14 @@ async function carregarDados() {
 }
 
 async function excluir(id) {
+    var confirmado = typeof confirmarAcao === "function"
+        ? await confirmarAcao("Tem certeza que deseja excluir este organizador? Esta acao nao pode ser desfeita.")
+        : confirm("Tem certeza que deseja excluir este organizador? Esta acao nao pode ser desfeita.");
+
+    if (!confirmado) {
+        return;
+    }
+
     const retorno = await fetch("../../php/organizador_excluir.php?id=" + id);
     const resposta = await retorno.json();
 
