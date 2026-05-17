@@ -9,7 +9,7 @@
 return [
     'host'    => 'localhost',
     'port'    => 3306,
-    'dbname'  => 'campustrack',
+    'dbname'  => 'campustrack_mapa',
     'user'    => 'root',
     'pass'    => '',
     'charset' => 'utf8mb4',
