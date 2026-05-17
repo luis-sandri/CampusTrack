@@ -3,7 +3,7 @@
  * Usa endpoints .php diretos (sem mod_rewrite)
  */
 const API = (() => {
-  const BASE = '/campustrack/api';
+  const BASE = '/MapaRota/api';
 
   async function request(endpoint, options = {}) {
     // Converte /mapa → /mapa.php, /locais → /locais.php, etc.
