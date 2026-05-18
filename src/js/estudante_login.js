@@ -15,11 +15,14 @@ document.addEventListener("DOMContentLoaded", function () {
     var linkVoltarMapa = document.getElementById("link-voltar-mapa");
     var linkCadastroAluno = document.getElementById("link-cadastro-aluno");
     var linkLoginAluno = document.getElementById("link-login-aluno");
+    var linkFavoritosAluno = document.getElementById("link-favoritos-aluno");
+    var itemFavoritosAluno = document.getElementById("item-favoritos-aluno");
     var btnMenuEstudante = document.getElementById("btn-menu-estudante");
     var itemSeparadorLogoutAluno = document.getElementById("item-separador-logout-aluno");
     var itemLogoutAluno = document.getElementById("item-logout-aluno");
     var btnLogoutAluno = document.getElementById("btn-logout-aluno");
     var inputModo = document.getElementById("modo");
+    var idsFavoritados = new Set();
     var tituloEstudante = document.getElementById("titulo-estudante");
 
     var urlParams = new URLSearchParams(window.location.search);
@@ -48,7 +51,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (mapaLocais) {
-            carregarLocais(idInstituicao);
             verificarSessaoAluno();
         }
     } else if (inputIdInstituicao) {
@@ -118,6 +120,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (linkLoginAluno) {
             linkLoginAluno.href = "../estudante/login.html" + queryLogin;
+        }
+
+        if (linkFavoritosAluno) {
+            linkFavoritosAluno.href = "../estudante/favoritos.html";
         }
     }
 
@@ -314,12 +320,32 @@ document.addEventListener("DOMContentLoaded", function () {
                 mapaVazio.remove();
             }
 
+            var alunoLogado = document.body.getAttribute("data-aluno-logado") === "true";
+
             var html = "";
             for (var i = 0; i < registros.length; i++) {
                 var local = registros[i];
+                var favoritado = idsFavoritados.has(String(local.id_local));
+                var btnFavorito = "";
+
+                if (alunoLogado) {
+                    btnFavorito =
+                        '<button ' +
+                            'class="btn btn-sm ct-btn-favorito ' + (favoritado ? 'btn-warning' : 'btn-outline-secondary') + ' ms-auto" ' +
+                            'data-id-local="' + escapeHtml(local.id_local) + '" ' +
+                            'title="' + (favoritado ? 'Remover dos favoritos' : 'Adicionar aos favoritos') + '" ' +
+                            'aria-label="' + (favoritado ? 'Remover ' : 'Favoritar ') + escapeHtml(local.nome) + '" ' +
+                            'aria-pressed="' + (favoritado ? 'true' : 'false') + '">' +
+                            (favoritado ? '★' : '☆') +
+                        '</button>';
+                }
+
                 html += '<div class="col-md-6">';
                 html += '<div class="border rounded-3 p-3 h-100 bg-light">';
-                html += '<h3 class="h6 fw-bold mb-1">' + escapeHtml(local.nome) + '</h3>';
+                html += '<div class="d-flex align-items-start gap-2 mb-1">';
+                html += '<h3 class="h6 fw-bold mb-0 flex-grow-1">' + escapeHtml(local.nome) + '</h3>';
+                html += btnFavorito;
+                html += '</div>';
                 html += '<p class="small text-muted mb-2">' + escapeHtml(local.tipo_escola) + ' - ' + escapeHtml(local.tipo) + '</p>';
                 html += '<p class="small mb-0">Capacidade: ' + escapeHtml(local.capacidade) + '</p>';
                 html += '<p class="small mb-0">Longitude: ' + escapeHtml(local.longitude) + '</p>';
@@ -332,6 +358,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (listaLocais) {
                 listaLocais.innerHTML = html;
+
+                // Vincula eventos de favorito após render
+                var botoes = listaLocais.querySelectorAll(".ct-btn-favorito");
+                for (var j = 0; j < botoes.length; j++) {
+                    botoes[j].addEventListener("click", aoClicarFavorito);
+                }
             }
         })
         .catch(function (error) {
@@ -345,6 +377,67 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    function carregarFavoritosAluno(idInstituicaoParam) {
+        fetch("../../php/favorito_get.php")
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (resposta) {
+            idsFavoritados = new Set();
+            if (resposta.status === "ok" && Array.isArray(resposta.data)) {
+                for (var i = 0; i < resposta.data.length; i++) {
+                    idsFavoritados.add(String(resposta.data[i].id_local));
+                }
+            }
+            // Re-renderiza os locais já carregados com o estado correto de favorito
+            carregarLocais(idInstituicaoParam);
+        })
+        .catch(function () {
+            carregarLocais(idInstituicaoParam);
+        });
+    }
+
+    function aoClicarFavorito(event) {
+        var botao   = event.currentTarget;
+        var idLocal = botao.getAttribute("data-id-local");
+        var estaFavoritado = idsFavoritados.has(idLocal);
+        var endpoint = estaFavoritado ? "../../php/favorito_remover.php" : "../../php/favorito_adicionar.php";
+
+        botao.disabled = true;
+
+        var formData = new FormData();
+        formData.append("id_local", idLocal);
+
+        fetch(endpoint, { method: "POST", body: formData })
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (retorno) {
+            if (retorno.status === "ok") {
+                if (estaFavoritado) {
+                    idsFavoritados.delete(idLocal);
+                    botao.textContent = "☆";
+                    botao.setAttribute("aria-pressed", "false");
+                    botao.setAttribute("title", "Adicionar aos favoritos");
+                    botao.className = botao.className.replace("btn-warning", "btn-outline-secondary");
+                } else {
+                    idsFavoritados.add(idLocal);
+                    botao.textContent = "★";
+                    botao.setAttribute("aria-pressed", "true");
+                    botao.setAttribute("title", "Remover dos favoritos");
+                    botao.className = botao.className.replace("btn-outline-secondary", "btn-warning");
+                }
+            } else {
+                alert(retorno.mensagem || "Erro ao atualizar favorito.");
+            }
+            botao.disabled = false;
+        })
+        .catch(function () {
+            alert("Erro de conexao ao atualizar favorito.");
+            botao.disabled = false;
+        });
+    }
+
     function verificarSessaoAluno() {
         fetch("../../php/sessao_status.php?perfil=aluno")
         .then(function (response) {
@@ -354,6 +447,10 @@ document.addEventListener("DOMContentLoaded", function () {
             if (resposta.status !== "ok" || !Array.isArray(resposta.data) || resposta.data.length === 0) {
                 document.body.setAttribute("data-aluno-logado", "false");
                 exibirLogoutAluno(false);
+                // Carrega os locais sem favoritos
+                if (idInstituicao && /^\d+$/.test(idInstituicao)) {
+                    carregarLocais(idInstituicao);
+                }
                 return;
             }
 
@@ -367,16 +464,25 @@ document.addEventListener("DOMContentLoaded", function () {
             desabilitarLinkAluno(linkCadastroAluno);
             desabilitarLinkAluno(linkLoginAluno);
             exibirLogoutAluno(true);
+
+            // Carrega favoritos e depois re-renderiza os locais com os botões corretos
+            if (idInstituicao && /^\d+$/.test(idInstituicao)) {
+                carregarFavoritosAluno(idInstituicao);
+            }
         })
         .catch(function () {
             document.body.setAttribute("data-aluno-logado", "false");
             exibirLogoutAluno(false);
+            if (idInstituicao && /^\d+$/.test(idInstituicao)) {
+                carregarLocais(idInstituicao);
+            }
         });
     }
 
     function exibirLogoutAluno(ativo) {
         alternarItemLogout(itemSeparadorLogoutAluno, ativo);
         alternarItemLogout(itemLogoutAluno, ativo);
+        alternarItemLogout(itemFavoritosAluno, ativo);
     }
 
     function alternarItemLogout(item, ativo) {
