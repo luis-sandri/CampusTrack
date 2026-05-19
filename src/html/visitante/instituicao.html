@@ -96,7 +96,34 @@
       border-radius: 999px;
       box-shadow: 0 0.25rem 1rem rgba(22, 163, 74, 0.35);
     }
+    .ct-desktop-nav {
+      display: flex;
+      gap: 0.25rem;
+      margin-left: 0.75rem;
+    }
+    .ct-desktop-nav a {
+      border-radius: 0.5rem;
+      color: #4b5563;
+      font-size: 0.92rem;
+      font-weight: 600;
+      padding: 0.45rem 0.7rem;
+      text-decoration: none;
+    }
+    .ct-desktop-nav a:hover,
+    .ct-desktop-nav a:focus {
+      color: #1e40af;
+    }
+    .ct-desktop-nav a.active {
+      background-color: rgba(30, 64, 175, 0.08);
+      color: #1e40af;
+    }
+    .ct-mobile-tabbar {
+      display: none;
+    }
     @media (max-width: 767.98px) {
+      body {
+        padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));
+      }
       .navbar .container-fluid {
         gap: 0.75rem;
       }
@@ -116,30 +143,37 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+      .ct-desktop-nav {
+        display: none;
+      }
       .ct-map-shell,
       .ct-map {
-        min-height: calc(100vh - 65px);
-        min-height: calc(100svh - 65px);
+        min-height: calc(100vh - 65px - 4.75rem);
+        min-height: calc(100svh - 65px - 4.75rem);
       }
       .ct-map-panel {
         border-radius: 0.75rem !important;
-        bottom: 0.75rem;
         left: 0.75rem;
         max-height: none;
         overflow: visible;
-        padding: 0.75rem !important;
-        top: auto;
+        padding: 0.6rem !important;
+        top: 0.75rem;
         width: calc(100% - 1.5rem);
       }
       .ct-map-panel h1 {
-        font-size: 0.98rem;
-        margin-bottom: 0 !important;
+        font-size: 0.86rem;
+        line-height: 1.1;
       }
       .ct-map-panel > p.text-secondary {
         display: none;
       }
       .ct-map-panel .input-group {
-        margin-top: 0.65rem !important;
+        margin-top: 0.5rem !important;
+      }
+      .ct-map-panel .input-group .form-control,
+      .ct-map-panel .input-group .btn {
+        font-size: 0.78rem;
+        min-height: 2rem;
       }
       .ct-location-results {
         display: none;
@@ -158,9 +192,7 @@
         padding: 0.55rem 0;
       }
       .ct-map-panel .d-grid {
-        gap: 0.5rem !important;
-        grid-template-columns: 1fr 1fr;
-        margin-top: 0.65rem !important;
+        margin-top: 0.45rem !important;
       }
       #btn-limpar-rota:disabled {
         display: none;
@@ -188,6 +220,57 @@
         margin: 0.75rem;
         max-width: 14rem;
       }
+      .ct-mobile-tabbar {
+        align-items: stretch;
+        background-color: #ffffff;
+        border-top: 1px solid #d1d5db;
+        bottom: 0;
+        box-shadow: 0 -0.35rem 1rem rgba(15, 23, 42, 0.08);
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        left: 0;
+        padding: 0.35rem 0.5rem calc(0.35rem + env(safe-area-inset-bottom));
+        position: fixed;
+        right: 0;
+        z-index: 950;
+      }
+      .ct-mobile-tabbar a {
+        align-items: center;
+        border-radius: 0.625rem;
+        color: #6b7280;
+        display: flex;
+        flex-direction: column;
+        font-size: 0.68rem;
+        font-weight: 600;
+        gap: 0.16rem;
+        justify-content: center;
+        min-height: 3.35rem;
+        text-decoration: none;
+      }
+      .ct-mobile-tabbar a::before {
+        background-color: currentColor;
+        content: "";
+        height: 1.1rem;
+        width: 1.1rem;
+      }
+      .ct-mobile-tabbar a[data-tab="mapa"]::before {
+        clip-path: polygon(50% 0, 90% 28%, 90% 82%, 50% 100%, 10% 82%, 10% 28%);
+      }
+      .ct-mobile-tabbar a[data-tab="eventos"]::before {
+        border-radius: 0.18rem;
+        clip-path: inset(0);
+      }
+      .ct-mobile-tabbar a[data-tab="favoritos"]::before {
+        clip-path: polygon(50% 4%, 61% 35%, 95% 35%, 68% 55%, 79% 90%, 50% 68%, 21% 90%, 32% 55%, 5% 35%, 39% 35%);
+      }
+      .ct-mobile-tabbar a[data-tab="perfil"]::before {
+        border-radius: 999px 999px 0.35rem 0.35rem;
+        clip-path: polygon(50% 0, 72% 18%, 72% 42%, 88% 58%, 88% 100%, 12% 100%, 12% 58%, 28% 42%, 28% 18%);
+      }
+      .ct-mobile-tabbar a.active {
+        background-color: rgba(30, 64, 175, 0.08);
+        color: #1e40af;
+      }
     }
     @media (max-width: 575.98px) {
       .ct-location-results {
@@ -206,7 +289,7 @@
         max-width: 7.5rem;
       }
       .ct-map-panel {
-        padding: 0.875rem !important;
+        padding: 0.55rem !important;
       }
       .ct-map-panel .input-group {
         display: flex;
@@ -227,10 +310,18 @@
 <body class="min-vh-100 d-flex flex-column">
   <nav class="navbar navbar-expand-lg border-bottom bg-white">
     <div class="container-fluid px-3 px-sm-4 py-2">
-      <a class="navbar-brand fw-bold text-primary" href="../index.html">
-        <img src="../../../assets/logo-campustrack.png" alt="CampusTrack" width="40" height="40" class="d-inline-block align-text-top me-2">
-        CampusTrack
-      </a>
+      <div class="d-flex align-items-center">
+        <a class="navbar-brand fw-bold text-primary me-0" href="../index.html">
+          <img src="../../../assets/logo-campustrack.png" alt="CampusTrack" width="40" height="40" class="d-inline-block align-text-top me-2">
+          CampusTrack
+        </a>
+        <nav class="ct-desktop-nav" aria-label="Secoes do estudante">
+          <a class="active" data-tab="mapa" href="instituicao.html">Mapa</a>
+          <a data-tab="eventos" href="../estudante/eventos.html">Eventos</a>
+          <a data-tab="favoritos" href="../estudante/favoritos.html">Favoritos</a>
+          <a data-tab="perfil" href="../estudante/perfil.html">Perfil</a>
+        </nav>
+      </div>
       <div class="dropdown">
         <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="btn-menu-estudante" data-bs-toggle="dropdown" aria-expanded="false">
           Estudante
@@ -257,7 +348,6 @@
         </div>
         <div id="resultado-locais" class="ct-location-results small mt-2"></div>
         <div class="d-grid gap-2 mt-3">
-          <button id="btn-localizar-estudante" type="button" class="btn btn-outline-primary btn-sm">Usar minha localizacao</button>
           <button id="btn-limpar-rota" type="button" class="btn btn-outline-secondary btn-sm" disabled>Limpar rota</button>
         </div>
         <p id="mapa-status" class="ct-map-status text-secondary small mt-2 mb-0"></p>
@@ -269,8 +359,15 @@
     </section>
   </main>
 
+  <nav class="ct-mobile-tabbar" aria-label="Navegacao do estudante">
+    <a class="active" data-tab="mapa" href="instituicao.html">Mapa</a>
+    <a data-tab="eventos" href="../estudante/eventos.html">Eventos</a>
+    <a data-tab="favoritos" href="../estudante/favoritos.html">Favoritos</a>
+    <a data-tab="perfil" href="../estudante/perfil.html">Perfil</a>
+  </nav>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="../../js/estudante_login.js?v=mapa-pucpr-scroll-busca-20260519" defer></script>
+  <script src="../../js/estudante_login.js?v=mapa-pucpr-desktop-nav-20260519" defer></script>
 </body>
 </html>

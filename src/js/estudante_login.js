@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var btnLogoutAluno = document.getElementById("btn-logout-aluno");
     var inputModo = document.getElementById("modo");
     var tituloEstudante = document.getElementById("titulo-estudante");
+    var linksNavegacaoAluno = document.querySelectorAll(".ct-desktop-nav a, .ct-mobile-tabbar a");
 
     var urlParams = new URLSearchParams(window.location.search);
     var idInstituicao = urlParams.get("id_instituicao") || urlParams.get("id");
@@ -43,6 +44,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var linhaRota = null;
     var watchLocalizacaoId = null;
     var resizeMapaRegistrado = false;
+    var localizacaoInicialSolicitada = false;
     var modoAluno = urlParams.get("modo") === "login" ? "login" : "cadastro";
     var textoInstrucaoInicial = modoAluno === "login"
         ? "Informe seu e-mail institucional e senha para receber o codigo de acesso."
@@ -61,6 +63,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         atualizarLinksAluno(idInstituicao);
+        atualizarLinksNavegacaoAluno(idInstituicao);
 
         if (linkVoltarMapa) {
             linkVoltarMapa.href = "../visitante/instituicao.html?id=" + encodeURIComponent(idInstituicao);
@@ -373,6 +376,7 @@ document.addEventListener("DOMContentLoaded", function () {
         atualizarResultadosBusca();
         ajustarMapaAosLocais();
         atualizarMapaStatus(mensagem, tipoMensagem);
+        solicitarLocalizacaoInicial();
 
         if (listaLocais) {
             listaLocais.innerHTML = montarListaLocais(locaisMapa);
@@ -786,6 +790,15 @@ document.addEventListener("DOMContentLoaded", function () {
         );
     }
 
+    function solicitarLocalizacaoInicial() {
+        if (localizacaoInicialSolicitada || !mapaLeaflet) {
+            return;
+        }
+
+        localizacaoInicialSolicitada = true;
+        localizarEstudante();
+    }
+
     function atualizarPosicaoUsuario(posicao) {
         var latitude = posicao.coords.latitude;
         var longitude = posicao.coords.longitude;
@@ -915,6 +928,25 @@ document.addEventListener("DOMContentLoaded", function () {
             mapaStatus.classList.add("text-warning");
         } else {
             mapaStatus.classList.add("text-secondary");
+        }
+    }
+
+    function atualizarLinksNavegacaoAluno(id) {
+        if (!linksNavegacaoAluno || linksNavegacaoAluno.length === 0) {
+            return;
+        }
+
+        var query = "?id=" + encodeURIComponent(id);
+
+        for (var i = 0; i < linksNavegacaoAluno.length; i++) {
+            var link = linksNavegacaoAluno[i];
+            var aba = link.getAttribute("data-tab");
+
+            if (aba === "mapa") {
+                link.href = "instituicao.html" + query;
+            } else {
+                link.href = "../estudante/" + aba + ".html" + query;
+            }
         }
     }
 
