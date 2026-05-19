@@ -462,6 +462,8 @@ document.addEventListener("DOMContentLoaded", function () {
             minZoom: 15
         }).setView(coordenadasPadrao, 17);
 
+        mapaLeaflet.attributionControl.setPrefix(false);
+
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             maxZoom: 20,
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -639,10 +641,9 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        var limite = Math.min(filtrados.length, 8);
         var html = "";
 
-        for (var j = 0; j < limite; j++) {
+        for (var j = 0; j < filtrados.length; j++) {
             var ativo = localSelecionado && localSelecionado.id_local === filtrados[j].id_local ? " is-active" : "";
             html += '<button type="button" class="ct-location-result' + ativo + '" data-id-local="' + escapeHtml(filtrados[j].id_local) + '">';
             html += '<span class="fw-semibold d-block">' + escapeHtml(filtrados[j].nome) + '</span>';
@@ -650,11 +651,28 @@ document.addEventListener("DOMContentLoaded", function () {
             html += '</button>';
         }
 
-        if (filtrados.length > limite) {
-            html += '<div class="text-muted pt-2">Mostrando ' + limite + ' de ' + filtrados.length + ' locais.</div>';
+        resultadoLocais.innerHTML = html;
+    }
+
+    function prepararRolagemResultados() {
+        if (!resultadoLocais) {
+            return;
         }
 
-        resultadoLocais.innerHTML = html;
+        if (typeof L !== "undefined" && L.DomEvent) {
+            L.DomEvent.disableScrollPropagation(resultadoLocais);
+            L.DomEvent.disableClickPropagation(resultadoLocais);
+        }
+
+        var pararPropagacao = function (e) {
+            e.stopPropagation();
+        };
+
+        resultadoLocais.addEventListener("wheel", pararPropagacao, { passive: true });
+        resultadoLocais.addEventListener("touchstart", pararPropagacao, { passive: true });
+        resultadoLocais.addEventListener("touchmove", pararPropagacao, { passive: true });
+        resultadoLocais.addEventListener("pointerdown", pararPropagacao);
+        resultadoLocais.addEventListener("pointermove", pararPropagacao);
     }
 
     function atualizarEstadoBuscaMapa(ativo) {
@@ -1016,6 +1034,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (resultadoLocais) {
+        prepararRolagemResultados();
+
         resultadoLocais.addEventListener("click", function (e) {
             var botao = e.target.closest("[data-id-local]");
             if (!botao) {
