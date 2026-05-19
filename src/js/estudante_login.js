@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var instrucaoTexto = document.getElementById("instrucao-texto");
     var listaLocais = document.getElementById("lista-locais");
     var mapaLocais = document.getElementById("mapa-locais");
+    var painelMapa = document.querySelector(".ct-map-panel");
     var mapaVazio = document.getElementById("mapa-vazio");
     var buscaLocal = document.getElementById("busca-local");
     var btnLimparBusca = document.getElementById("btn-limpar-busca");
@@ -41,6 +42,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var raioUsuario = null;
     var linhaRota = null;
     var watchLocalizacaoId = null;
+    var resizeMapaRegistrado = false;
     var modoAluno = urlParams.get("modo") === "login" ? "login" : "cadastro";
     var textoInstrucaoInicial = modoAluno === "login"
         ? "Informe seu e-mail institucional e senha para receber o codigo de acesso."
@@ -471,11 +473,30 @@ document.addEventListener("DOMContentLoaded", function () {
 
         camadaLocais = L.layerGroup().addTo(mapaLeaflet);
 
+        registrarResizeMapa();
+
         setTimeout(function () {
             mapaLeaflet.invalidateSize();
         }, 0);
 
         return true;
+    }
+
+    function registrarResizeMapa() {
+        if (resizeMapaRegistrado) {
+            return;
+        }
+
+        resizeMapaRegistrado = true;
+        window.addEventListener("resize", function () {
+            if (!mapaLeaflet) {
+                return;
+            }
+
+            setTimeout(function () {
+                mapaLeaflet.invalidateSize();
+            }, 150);
+        });
     }
 
     function prepararLocaisMapa(registros) {
@@ -597,6 +618,8 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
+        atualizarEstadoBuscaMapa();
+
         var termo = normalizarTexto(buscaLocal ? buscaLocal.value : "");
         var filtrados = [];
 
@@ -634,6 +657,22 @@ document.addEventListener("DOMContentLoaded", function () {
         resultadoLocais.innerHTML = html;
     }
 
+    function atualizarEstadoBuscaMapa(ativo) {
+        if (!painelMapa) {
+            return;
+        }
+
+        var buscaAtiva = typeof ativo === "boolean"
+            ? ativo
+            : buscaLocal && (buscaLocal.value.trim() !== "" || document.activeElement === buscaLocal);
+
+        if (buscaAtiva) {
+            painelMapa.classList.add("ct-search-open");
+        } else {
+            painelMapa.classList.remove("ct-search-open");
+        }
+    }
+
     function textoBuscaLocal(local) {
         return normalizarTexto(local.nome + " " + local.tipo_escola + " " + local.tipo);
     }
@@ -652,6 +691,13 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         localSelecionado = local;
+        if (buscaLocal && window.matchMedia("(max-width: 767.98px)").matches) {
+            buscaLocal.value = "";
+        }
+        atualizarEstadoBuscaMapa(false);
+        if (buscaLocal) {
+            buscaLocal.blur();
+        }
         mapaLeaflet.setView([local.latitude, local.longitude], Math.max(mapaLeaflet.getZoom(), 18));
 
         if (marcadoresLocais[local.id_local] && abrirPopup !== false) {
@@ -945,6 +991,16 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (buscaLocal) {
+        buscaLocal.addEventListener("focus", function () {
+            atualizarEstadoBuscaMapa(true);
+        });
+
+        buscaLocal.addEventListener("blur", function () {
+            setTimeout(function () {
+                atualizarEstadoBuscaMapa(buscaLocal.value.trim() !== "");
+            }, 180);
+        });
+
         buscaLocal.addEventListener("input", atualizarResultadosBusca);
     }
 
@@ -954,6 +1010,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 buscaLocal.value = "";
                 buscaLocal.focus();
             }
+            atualizarEstadoBuscaMapa(true);
             atualizarResultadosBusca();
         });
     }
