@@ -12,6 +12,12 @@ document.addEventListener("DOMContentLoaded", function () {
     var listaLocais = document.getElementById("lista-locais");
     var mapaLocais = document.getElementById("mapa-locais");
     var mapaVazio = document.getElementById("mapa-vazio");
+    var buscaLocal = document.getElementById("busca-local");
+    var btnLimparBusca = document.getElementById("btn-limpar-busca");
+    var resultadoLocais = document.getElementById("resultado-locais");
+    var btnLocalizarEstudante = document.getElementById("btn-localizar-estudante");
+    var btnLimparRota = document.getElementById("btn-limpar-rota");
+    var mapaStatus = document.getElementById("mapa-status");
     var linkVoltarMapa = document.getElementById("link-voltar-mapa");
     var linkCadastroAluno = document.getElementById("link-cadastro-aluno");
     var linkLoginAluno = document.getElementById("link-login-aluno");
@@ -24,6 +30,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var urlParams = new URLSearchParams(window.location.search);
     var idInstituicao = urlParams.get("id_instituicao") || urlParams.get("id");
+    var coordenadasPadrao = [-25.45275, -49.25083];
+    var mapaLeaflet = null;
+    var camadaLocais = null;
+    var marcadoresLocais = {};
+    var locaisMapa = [];
+    var localSelecionado = null;
+    var posicaoUsuario = null;
+    var marcadorUsuario = null;
+    var raioUsuario = null;
+    var linhaRota = null;
+    var watchLocalizacaoId = null;
     var modoAluno = urlParams.get("modo") === "login" ? "login" : "cadastro";
     var textoInstrucaoInicial = modoAluno === "login"
         ? "Informe seu e-mail institucional e senha para receber o codigo de acesso."
@@ -289,50 +306,23 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .then(function (resposta) {
             if (resposta.status !== "ok" || !Array.isArray(resposta.data)) {
-                if (listaLocais) {
-                    listaLocais.innerHTML = '<div class="col-12 text-muted">Nao foi possivel carregar os locais.</div>';
-                }
-                if (mapaVazio) {
-                    mapaVazio.textContent = "Nao foi possivel carregar o mapa.";
-                }
-                return;
-            }
+                var locaisFixos = obterLocaisFixosInstituicao(id);
 
-            var registros = resposta.data;
-
-            if (registros.length === 0) {
-                if (listaLocais) {
-                    listaLocais.innerHTML = '<div class="col-12 text-muted">Nenhum local cadastrado para esta instituicao.</div>';
-                }
-                if (mapaVazio) {
-                    mapaVazio.textContent = "Mapa sem pontos cadastrados para esta instituicao.";
+                if (locaisFixos.length > 0) {
+                    carregarLocaisNoMapa(locaisFixos, "Nao foi possivel carregar o banco. Exibindo locais fixos da PUCPR.", "warning");
+                } else {
+                    if (listaLocais) {
+                        listaLocais.innerHTML = '<div class="col-12 text-muted">Nao foi possivel carregar os locais.</div>';
+                    }
+                    if (mapaVazio) {
+                        mapaVazio.textContent = "Nao foi possivel carregar o mapa.";
+                    }
+                    atualizarMapaStatus("Nao foi possivel carregar os locais da instituicao.", "danger");
                 }
                 return;
             }
 
-            if (mapaVazio) {
-                mapaVazio.remove();
-            }
-
-            var html = "";
-            for (var i = 0; i < registros.length; i++) {
-                var local = registros[i];
-                html += '<div class="col-md-6">';
-                html += '<div class="border rounded-3 p-3 h-100 bg-light">';
-                html += '<h3 class="h6 fw-bold mb-1">' + escapeHtml(local.nome) + '</h3>';
-                html += '<p class="small text-muted mb-2">' + escapeHtml(local.tipo_escola) + ' - ' + escapeHtml(local.tipo) + '</p>';
-                html += '<p class="small mb-0">Capacidade: ' + escapeHtml(local.capacidade) + '</p>';
-                html += '<p class="small mb-0">Longitude: ' + escapeHtml(local.longitude) + '</p>';
-                html += '<p class="small mb-0">Latitude: ' + escapeHtml(local.latitude) + '</p>';
-                html += '</div>';
-                html += '</div>';
-
-                adicionarPinoNoMapa(local, i, registros.length);
-            }
-
-            if (listaLocais) {
-                listaLocais.innerHTML = html;
-            }
+            carregarLocaisNoMapa(resposta.data, "Pesquise um bloco ou selecione um marcador no mapa.");
         })
         .catch(function (error) {
             if (listaLocais) {
@@ -341,8 +331,527 @@ document.addEventListener("DOMContentLoaded", function () {
             if (mapaVazio) {
                 mapaVazio.textContent = "Erro de conexao ao carregar o mapa.";
             }
+            atualizarMapaStatus("Erro de conexao ao carregar o mapa.", "danger");
+
             console.error(error);
         });
+    }
+
+    function carregarLocaisNoMapa(registros, mensagem, tipoMensagem) {
+        locaisMapa = prepararLocaisMapa(registros);
+
+        if (registros.length > 0 && registros[0].nome_instituicao) {
+            var idInstituicaoTexto = document.getElementById("id-instituicao");
+            if (idInstituicaoTexto) {
+                idInstituicaoTexto.textContent = registros[0].nome_instituicao;
+            }
+        }
+
+        if (locaisMapa.length === 0) {
+            if (listaLocais) {
+                listaLocais.innerHTML = '<div class="col-12 text-muted">Nenhum local cadastrado para esta instituicao.</div>';
+            }
+            if (mapaVazio) {
+                mapaVazio.textContent = "Nenhum local com coordenadas validas para esta instituicao.";
+            }
+            atualizarMapaStatus("Cadastre latitude e longitude nos locais para exibir o mapa.", "warning");
+            return;
+        }
+
+        if (!inicializarMapa()) {
+            atualizarResultadosBusca();
+            return;
+        }
+
+        if (mapaVazio) {
+            mapaVazio.classList.add("d-none");
+        }
+
+        desenharLocaisNoMapa();
+        atualizarResultadosBusca();
+        ajustarMapaAosLocais();
+        atualizarMapaStatus(mensagem, tipoMensagem);
+
+        if (listaLocais) {
+            listaLocais.innerHTML = montarListaLocais(locaisMapa);
+        }
+    }
+
+    function obterLocaisFixosInstituicao(id) {
+        if (String(id) !== "1") {
+            return [];
+        }
+
+        return [
+            {
+                id_local: "pucpr-bloco-10",
+                id_instituicao: 1,
+                tipo_escola: "Politecnica",
+                tipo: "Bloco",
+                nome: "Bloco 10 - Cinza",
+                capacidade: "",
+                longitude: "-49.24988010957719",
+                latitude: "-25.448778468099164",
+                nome_instituicao: "PUCPR Curitiba",
+                fixo: true,
+                observacao: "Local fixo desta branch"
+            },
+            {
+                id_local: "pucpr-bloco-5",
+                id_instituicao: 1,
+                tipo_escola: "Belas Artes",
+                tipo: "Bloco",
+                nome: "Bloco 5 - Vermelho",
+                capacidade: "",
+                longitude: "-49.25138814892537",
+                latitude: "-25.449208632378372",
+                nome_instituicao: "PUCPR Curitiba",
+                fixo: true,
+                observacao: "Local fixo desta branch"
+            },
+            {
+                id_local: "pucpr-bloco-1",
+                id_instituicao: 1,
+                tipo_escola: "Educacao e Humanidades",
+                tipo: "Bloco",
+                nome: "Bloco 1",
+                capacidade: "",
+                longitude: "-49.2523",
+                latitude: "-25.4521",
+                nome_instituicao: "PUCPR Curitiba",
+                fixo: true,
+                observacao: "Local fixo desta branch"
+            },
+            {
+                id_local: "pucpr-digital-arena",
+                id_instituicao: 1,
+                tipo_escola: "Digital Arena",
+                tipo: "Auditorio",
+                nome: "FTD Digital Arena",
+                capacidade: "116",
+                longitude: "-49.251924784316095",
+                latitude: "-25.452812382769036",
+                nome_instituicao: "PUCPR Curitiba",
+                fixo: true,
+                observacao: "Local fixo desta branch"
+            }
+        ];
+    }
+
+    function inicializarMapa() {
+        if (!mapaLocais) {
+            return false;
+        }
+
+        if (typeof L === "undefined") {
+            if (mapaVazio) {
+                mapaVazio.textContent = "Nao foi possivel carregar a biblioteca do mapa.";
+            }
+            atualizarMapaStatus("Verifique sua conexao para carregar o mapa interativo.", "danger");
+            return false;
+        }
+
+        if (mapaLeaflet) {
+            return true;
+        }
+
+        mapaLeaflet = L.map(mapaLocais, {
+            zoomControl: false,
+            minZoom: 15
+        }).setView(coordenadasPadrao, 17);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 20,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(mapaLeaflet);
+
+        L.control.zoom({
+            position: "bottomright"
+        }).addTo(mapaLeaflet);
+
+        camadaLocais = L.layerGroup().addTo(mapaLeaflet);
+
+        setTimeout(function () {
+            mapaLeaflet.invalidateSize();
+        }, 0);
+
+        return true;
+    }
+
+    function prepararLocaisMapa(registros) {
+        var locais = [];
+
+        for (var i = 0; i < registros.length; i++) {
+            var local = registros[i];
+            var latitude = parseCoordenada(local.latitude);
+            var longitude = parseCoordenada(local.longitude);
+
+            if (coordenadaValida(latitude, longitude)) {
+                locais.push({
+                    id_local: String(local.id_local),
+                    nome: local.nome || "",
+                    tipo_escola: local.tipo_escola || "",
+                    tipo: local.tipo || "",
+                    capacidade: local.capacidade || "",
+                    nome_instituicao: local.nome_instituicao || "",
+                    fixo: local.fixo === true,
+                    observacao: local.observacao || "",
+                    latitude: latitude,
+                    longitude: longitude
+                });
+            }
+        }
+
+        return locais;
+    }
+
+    function parseCoordenada(valor) {
+        return Number(String(valor === null || valor === undefined ? "" : valor).replace(",", "."));
+    }
+
+    function coordenadaValida(latitude, longitude) {
+        return Number.isFinite(latitude) && Number.isFinite(longitude) &&
+            latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
+    }
+
+    function desenharLocaisNoMapa() {
+        marcadoresLocais = {};
+
+        if (!camadaLocais) {
+            return;
+        }
+
+        camadaLocais.clearLayers();
+
+        for (var i = 0; i < locaisMapa.length; i++) {
+            adicionarMarcadorLocal(locaisMapa[i]);
+        }
+    }
+
+    function adicionarMarcadorLocal(local) {
+        var marcador = L.marker([local.latitude, local.longitude]);
+        marcador.bindPopup(montarPopupLocal(local));
+        marcador.on("click", function () {
+            selecionarLocal(local.id_local, false);
+        });
+        marcador.addTo(camadaLocais);
+        marcadoresLocais[local.id_local] = marcador;
+    }
+
+    function montarPopupLocal(local) {
+        var html = '<strong>' + escapeHtml(local.nome) + '</strong>';
+        html += '<div class="small text-muted">' + escapeHtml(local.tipo_escola) + ' - ' + escapeHtml(local.tipo) + '</div>';
+        if (local.capacidade !== "") {
+            html += '<div class="small">Capacidade: ' + escapeHtml(local.capacidade) + '</div>';
+        }
+        if (local.observacao !== "") {
+            html += '<div class="small text-muted">' + escapeHtml(local.observacao) + '</div>';
+        }
+        html += '<button type="button" class="btn btn-primary btn-sm mt-2" data-rota-local="' + escapeHtml(local.id_local) + '">Tracar rota</button>';
+        return html;
+    }
+
+    function ajustarMapaAosLocais() {
+        if (!mapaLeaflet || locaisMapa.length === 0) {
+            return;
+        }
+
+        var pontos = [];
+        for (var i = 0; i < locaisMapa.length; i++) {
+            pontos.push([locaisMapa[i].latitude, locaisMapa[i].longitude]);
+        }
+
+        var bounds = L.latLngBounds(pontos);
+
+        if (locaisMapa.length === 1) {
+            mapaLeaflet.setView(pontos[0], 18);
+        } else {
+            mapaLeaflet.fitBounds(bounds.pad(0.25));
+            mapaLeaflet.setMaxBounds(bounds.pad(0.8));
+        }
+    }
+
+    function montarListaLocais(locais) {
+        var html = "";
+
+        for (var i = 0; i < locais.length; i++) {
+            html += '<div class="col-md-6">';
+            html += '<div class="border rounded-3 p-3 h-100 bg-light">';
+            html += '<h3 class="h6 fw-bold mb-1">' + escapeHtml(locais[i].nome) + '</h3>';
+            html += '<p class="small text-muted mb-2">' + escapeHtml(locais[i].tipo_escola) + ' - ' + escapeHtml(locais[i].tipo) + '</p>';
+            if (locais[i].observacao !== "") {
+                html += '<p class="small text-muted mb-2">' + escapeHtml(locais[i].observacao) + '</p>';
+            }
+            html += '<p class="small mb-0">Capacidade: ' + escapeHtml(locais[i].capacidade) + '</p>';
+            html += '<p class="small mb-0">Longitude: ' + escapeHtml(locais[i].longitude) + '</p>';
+            html += '<p class="small mb-0">Latitude: ' + escapeHtml(locais[i].latitude) + '</p>';
+            html += '</div>';
+            html += '</div>';
+        }
+
+        return html;
+    }
+
+    function atualizarResultadosBusca() {
+        if (!resultadoLocais) {
+            return;
+        }
+
+        var termo = normalizarTexto(buscaLocal ? buscaLocal.value : "");
+        var filtrados = [];
+
+        for (var i = 0; i < locaisMapa.length; i++) {
+            if (termo === "" || textoBuscaLocal(locaisMapa[i]).indexOf(termo) !== -1) {
+                filtrados.push(locaisMapa[i]);
+            }
+        }
+
+        if (locaisMapa.length === 0) {
+            resultadoLocais.innerHTML = '<div class="text-muted py-2">Nenhum local disponivel.</div>';
+            return;
+        }
+
+        if (filtrados.length === 0) {
+            resultadoLocais.innerHTML = '<div class="text-muted py-2">Nenhum local encontrado.</div>';
+            return;
+        }
+
+        var limite = Math.min(filtrados.length, 8);
+        var html = "";
+
+        for (var j = 0; j < limite; j++) {
+            var ativo = localSelecionado && localSelecionado.id_local === filtrados[j].id_local ? " is-active" : "";
+            html += '<button type="button" class="ct-location-result' + ativo + '" data-id-local="' + escapeHtml(filtrados[j].id_local) + '">';
+            html += '<span class="fw-semibold d-block">' + escapeHtml(filtrados[j].nome) + '</span>';
+            html += '<span class="text-muted">' + escapeHtml(filtrados[j].tipo_escola) + ' - ' + escapeHtml(filtrados[j].tipo) + '</span>';
+            html += '</button>';
+        }
+
+        if (filtrados.length > limite) {
+            html += '<div class="text-muted pt-2">Mostrando ' + limite + ' de ' + filtrados.length + ' locais.</div>';
+        }
+
+        resultadoLocais.innerHTML = html;
+    }
+
+    function textoBuscaLocal(local) {
+        return normalizarTexto(local.nome + " " + local.tipo_escola + " " + local.tipo);
+    }
+
+    function normalizarTexto(valor) {
+        return String(valor === null || valor === undefined ? "" : valor)
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+    }
+
+    function selecionarLocal(idLocal, abrirPopup) {
+        var local = buscarLocalPorId(idLocal);
+        if (!local || !mapaLeaflet) {
+            return;
+        }
+
+        localSelecionado = local;
+        mapaLeaflet.setView([local.latitude, local.longitude], Math.max(mapaLeaflet.getZoom(), 18));
+
+        if (marcadoresLocais[local.id_local] && abrirPopup !== false) {
+            marcadoresLocais[local.id_local].openPopup();
+        }
+
+        atualizarResultadosBusca();
+
+        if (posicaoUsuario) {
+            desenharRotaAproximada(local);
+        } else {
+            atualizarMapaStatus("Destino selecionado. Use sua localizacao para tracar uma rota aproximada.");
+        }
+    }
+
+    function buscarLocalPorId(idLocal) {
+        var id = String(idLocal);
+
+        for (var i = 0; i < locaisMapa.length; i++) {
+            if (locaisMapa[i].id_local === id) {
+                return locaisMapa[i];
+            }
+        }
+
+        return null;
+    }
+
+    function localizarEstudante() {
+        if (!mapaLeaflet) {
+            atualizarMapaStatus("Aguarde o mapa carregar para usar sua localizacao.", "warning");
+            return;
+        }
+
+        if (!navigator.geolocation) {
+            atualizarMapaStatus("Seu navegador nao permite geolocalizacao.", "danger");
+            return;
+        }
+
+        if (btnLocalizarEstudante) {
+            btnLocalizarEstudante.disabled = true;
+            btnLocalizarEstudante.textContent = "Localizando...";
+        }
+
+        if (watchLocalizacaoId !== null) {
+            navigator.geolocation.clearWatch(watchLocalizacaoId);
+        }
+
+        watchLocalizacaoId = navigator.geolocation.watchPosition(
+            function (posicao) {
+                atualizarPosicaoUsuario(posicao);
+                if (btnLocalizarEstudante) {
+                    btnLocalizarEstudante.disabled = false;
+                    btnLocalizarEstudante.textContent = "Atualizar minha localizacao";
+                }
+            },
+            function () {
+                if (btnLocalizarEstudante) {
+                    btnLocalizarEstudante.disabled = false;
+                    btnLocalizarEstudante.textContent = "Usar minha localizacao";
+                }
+                atualizarMapaStatus("Nao foi possivel obter sua localizacao. Verifique a permissao do navegador.", "danger");
+            },
+            {
+                enableHighAccuracy: true,
+                maximumAge: 10000,
+                timeout: 15000
+            }
+        );
+    }
+
+    function atualizarPosicaoUsuario(posicao) {
+        var latitude = posicao.coords.latitude;
+        var longitude = posicao.coords.longitude;
+        var precisao = posicao.coords.accuracy || 0;
+
+        posicaoUsuario = {
+            latitude: latitude,
+            longitude: longitude,
+            precisao: precisao
+        };
+
+        var coordenadas = [latitude, longitude];
+
+        if (!marcadorUsuario) {
+            marcadorUsuario = L.circleMarker(coordenadas, {
+                className: "ct-user-location",
+                radius: 8,
+                fillColor: "#16a34a",
+                fillOpacity: 1,
+                color: "#ffffff",
+                weight: 3
+            }).addTo(mapaLeaflet).bindPopup("Voce esta aqui");
+        } else {
+            marcadorUsuario.setLatLng(coordenadas);
+        }
+
+        if (!raioUsuario) {
+            raioUsuario = L.circle(coordenadas, {
+                radius: precisao,
+                color: "#16a34a",
+                fillColor: "#16a34a",
+                fillOpacity: 0.08,
+                weight: 1
+            }).addTo(mapaLeaflet);
+        } else {
+            raioUsuario.setLatLng(coordenadas);
+            raioUsuario.setRadius(precisao);
+        }
+
+        if (localSelecionado) {
+            desenharRotaAproximada(localSelecionado);
+        } else {
+            mapaLeaflet.setView(coordenadas, Math.max(mapaLeaflet.getZoom(), 18));
+            atualizarMapaStatus("Localizacao encontrada. Selecione um destino para tracar a rota aproximada.");
+        }
+    }
+
+    function desenharRotaAproximada(local) {
+        if (!mapaLeaflet || !posicaoUsuario || !local) {
+            return;
+        }
+
+        var origem = [posicaoUsuario.latitude, posicaoUsuario.longitude];
+        var destino = [local.latitude, local.longitude];
+
+        if (linhaRota) {
+            mapaLeaflet.removeLayer(linhaRota);
+        }
+
+        linhaRota = L.polyline([origem, destino], {
+            color: "#1d4ed8",
+            dashArray: "8 8",
+            opacity: 0.9,
+            weight: 5
+        }).addTo(mapaLeaflet);
+
+        mapaLeaflet.fitBounds(L.latLngBounds([origem, destino]).pad(0.25));
+
+        if (btnLimparRota) {
+            btnLimparRota.disabled = false;
+        }
+
+        var distancia = distanciaMetros(posicaoUsuario.latitude, posicaoUsuario.longitude, local.latitude, local.longitude);
+        atualizarMapaStatus("Rota aproximada ate " + local.nome + ": " + formatarDistancia(distancia) + ". O caminho real sera ajustado quando o grafo do campus for cadastrado.");
+    }
+
+    function limparRota() {
+        if (linhaRota && mapaLeaflet) {
+            mapaLeaflet.removeLayer(linhaRota);
+        }
+
+        linhaRota = null;
+        localSelecionado = null;
+
+        if (btnLimparRota) {
+            btnLimparRota.disabled = true;
+        }
+
+        atualizarResultadosBusca();
+        atualizarMapaStatus("Rota removida. Pesquise ou selecione outro destino.");
+    }
+
+    function distanciaMetros(lat1, lon1, lat2, lon2) {
+        var raioTerra = 6371000;
+        var dLat = grausParaRadianos(lat2 - lat1);
+        var dLon = grausParaRadianos(lon2 - lon1);
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(grausParaRadianos(lat1)) * Math.cos(grausParaRadianos(lat2)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return raioTerra * c;
+    }
+
+    function grausParaRadianos(valor) {
+        return valor * Math.PI / 180;
+    }
+
+    function formatarDistancia(valor) {
+        if (valor >= 1000) {
+            return (valor / 1000).toFixed(1).replace(".", ",") + " km";
+        }
+
+        return Math.round(valor) + " m";
+    }
+
+    function atualizarMapaStatus(mensagem, tipo) {
+        if (!mapaStatus) {
+            return;
+        }
+
+        mapaStatus.textContent = mensagem || "";
+        mapaStatus.className = "ct-map-status small mt-2 mb-0";
+
+        if (tipo === "danger") {
+            mapaStatus.classList.add("text-danger");
+        } else if (tipo === "warning") {
+            mapaStatus.classList.add("text-warning");
+        } else {
+            mapaStatus.classList.add("text-secondary");
+        }
     }
 
     function verificarSessaoAluno() {
@@ -402,26 +911,6 @@ document.addEventListener("DOMContentLoaded", function () {
         link.setAttribute("tabindex", "-1");
     }
 
-    function adicionarPinoNoMapa(local, indice, total) {
-        if (!mapaLocais) {
-            return;
-        }
-
-        var pino = document.createElement("span");
-        pino.className = "ct-map-pin";
-        pino.title = local.nome;
-        pino.setAttribute("aria-label", local.nome);
-
-        var coluna = indice % 4;
-        var linha = Math.floor(indice / 4);
-        var left = 12 + (coluna * 22);
-        var top = 18 + ((linha % Math.max(1, Math.ceil(total / 4))) * 22);
-
-        pino.style.left = Math.min(left, 88) + "%";
-        pino.style.top = Math.min(top, 86) + "%";
-        mapaLocais.appendChild(pino);
-    }
-
     function escapeHtml(valor) {
         return String(valor === null || valor === undefined ? "" : valor)
             .replace(/&/g, "&amp;")
@@ -453,6 +942,50 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             console.error(error);
         });
+    }
+
+    if (buscaLocal) {
+        buscaLocal.addEventListener("input", atualizarResultadosBusca);
+    }
+
+    if (btnLimparBusca) {
+        btnLimparBusca.addEventListener("click", function () {
+            if (buscaLocal) {
+                buscaLocal.value = "";
+                buscaLocal.focus();
+            }
+            atualizarResultadosBusca();
+        });
+    }
+
+    if (resultadoLocais) {
+        resultadoLocais.addEventListener("click", function (e) {
+            var botao = e.target.closest("[data-id-local]");
+            if (!botao) {
+                return;
+            }
+
+            selecionarLocal(botao.getAttribute("data-id-local"), true);
+        });
+    }
+
+    if (mapaLocais) {
+        mapaLocais.addEventListener("click", function (e) {
+            var botao = e.target.closest("[data-rota-local]");
+            if (!botao) {
+                return;
+            }
+
+            selecionarLocal(botao.getAttribute("data-rota-local"), false);
+        });
+    }
+
+    if (btnLocalizarEstudante) {
+        btnLocalizarEstudante.addEventListener("click", localizarEstudante);
+    }
+
+    if (btnLimparRota) {
+        btnLimparRota.addEventListener("click", limparRota);
     }
 
     if (btnEnviarEmail) {

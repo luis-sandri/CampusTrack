@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CampusTrack - Mapa da instituicao</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
     :root {
       --bs-primary: #1e40af;
@@ -17,50 +18,71 @@
     }
     .ct-map-shell {
       min-height: calc(100vh - 73px);
-      padding: 1rem;
+      padding: 0;
     }
     .ct-map {
-      min-height: calc(100vh - 105px);
-      border: 1px solid var(--ct-border);
-      background:
-        linear-gradient(90deg, rgba(209, 213, 219, 0.6) 1px, transparent 1px),
-        linear-gradient(rgba(209, 213, 219, 0.6) 1px, transparent 1px),
-        radial-gradient(circle at 24% 28%, rgba(30, 64, 175, 0.12), transparent 14rem),
-        radial-gradient(circle at 72% 62%, rgba(22, 163, 74, 0.10), transparent 15rem),
-        #ffffff;
-      background-size: 56px 56px, 56px 56px, auto, auto, auto;
+      min-height: calc(100vh - 73px);
+      background-color: #e5e7eb;
       position: relative;
       overflow: hidden;
     }
     .ct-map-panel {
-      max-width: 24rem;
+      width: min(24rem, calc(100% - 2rem));
       position: absolute;
       left: 1rem;
       top: 1rem;
-      z-index: 2;
+      z-index: 900;
     }
-    .ct-map-pin {
-      width: 1rem;
-      height: 1rem;
-      border-radius: 999px;
-      background-color: #1e40af;
-      border: 3px solid #ffffff;
-      box-shadow: 0 0.25rem 0.75rem rgba(30, 64, 175, 0.35);
-      position: absolute;
+    .ct-location-results {
+      max-height: 11.5rem;
+      overflow-y: auto;
+    }
+    .ct-location-result {
+      border: 0;
+      border-top: 1px solid #e5e7eb;
+      background-color: transparent;
+      color: #212529;
+      display: block;
+      padding: 0.625rem 0;
+      text-align: left;
+      width: 100%;
+    }
+    .ct-location-result:first-child {
+      border-top: 0;
+    }
+    .ct-location-result:hover,
+    .ct-location-result:focus,
+    .ct-location-result.is-active {
+      color: #1e40af;
+      outline: 0;
+    }
+    .ct-map-status {
+      min-height: 1.25rem;
     }
     .ct-map-empty {
       min-height: inherit;
+      position: absolute;
+      inset: 0;
+      z-index: 450;
+      background-color: rgba(248, 249, 250, 0.92);
+    }
+    .leaflet-container {
+      font-family: inherit;
+    }
+    .ct-user-location {
+      background-color: #16a34a;
+      border: 3px solid #ffffff;
+      border-radius: 999px;
+      box-shadow: 0 0.25rem 1rem rgba(22, 163, 74, 0.35);
     }
     @media (max-width: 575.98px) {
-      .ct-map-shell {
-        padding: 0.75rem;
-      }
       .ct-map {
-        min-height: calc(100vh - 97px);
+        min-height: calc(100vh - 65px);
       }
       .ct-map-panel {
-        left: 0.75rem;
-        right: 0.75rem;
+        left: 0.5rem;
+        top: 0.5rem;
+        width: calc(100% - 1rem);
       }
     }
   </style>
@@ -88,10 +110,20 @@
   </nav>
 
   <main class="ct-map-shell flex-grow-1">
-    <section id="mapa-locais" class="ct-map rounded-3" aria-labelledby="mapa-titulo">
+    <section id="mapa-locais" class="ct-map" aria-labelledby="mapa-titulo">
       <div class="ct-map-panel bg-white border rounded-3 p-3 shadow-sm">
         <h1 id="mapa-titulo" class="h5 fw-bold text-primary mb-1">Mapa da instituicao</h1>
         <p class="text-secondary small mb-0">Instituicao selecionada: <span id="id-instituicao" class="fw-semibold">-</span></p>
+        <div class="input-group input-group-sm mt-3">
+          <input id="busca-local" type="search" class="form-control" placeholder="Pesquisar bloco ou local" aria-label="Pesquisar bloco ou local">
+          <button id="btn-limpar-busca" type="button" class="btn btn-outline-secondary">Limpar</button>
+        </div>
+        <div id="resultado-locais" class="ct-location-results small mt-2"></div>
+        <div class="d-grid gap-2 mt-3">
+          <button id="btn-localizar-estudante" type="button" class="btn btn-outline-primary btn-sm">Usar minha localizacao</button>
+          <button id="btn-limpar-rota" type="button" class="btn btn-outline-secondary btn-sm" disabled>Limpar rota</button>
+        </div>
+        <p id="mapa-status" class="ct-map-status text-secondary small mt-2 mb-0"></p>
       </div>
 
       <div id="mapa-vazio" class="ct-map-empty d-flex align-items-center justify-content-center text-muted px-4 text-center">
@@ -101,6 +133,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-  <script src="../../js/estudante_login.js" defer></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="../../js/estudante_login.js?v=mapa-pucpr-20260519" defer></script>
 </body>
 </html>

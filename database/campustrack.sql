@@ -1,5 +1,5 @@
--- Modelo físico do banco de dados
-CREATE DATABASE campustrack;
+-- Modelo fisico do banco de dados
+CREATE DATABASE IF NOT EXISTS campustrack;
 USE campustrack;
 
 CREATE TABLE IF NOT EXISTS Usuario (
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS Usuario (
 
 CREATE TABLE IF NOT EXISTS Organizacao (
     id_organizacao INT          PRIMARY KEY AUTO_INCREMENT,
-    nome           VARCHAR(255) NOT NULL,    
+    nome           VARCHAR(255) NOT NULL,
     cnpj           VARCHAR(14)  NOT NULL,
     senha          VARCHAR(255) NOT NULL,
     UNIQUE KEY unique_organizacao_cnpj (cnpj)
@@ -77,14 +77,14 @@ CREATE TABLE IF NOT EXISTS Organizador (
 );
 
 CREATE TABLE IF NOT EXISTS Locais (
-    id_local       INT          PRIMARY KEY AUTO_INCREMENT,
-    id_instituicao INT          NOT NULL,
-    tipo_escola    VARCHAR(50)  NOT NULL,
-    nome           VARCHAR(255) NOT NULL,
-    capacidade     INT          NOT NULL,
-    tipo           VARCHAR(50)  NOT NULL,
-    longitude      VARCHAR(10)  NOT NULL,
-    latitude       VARCHAR(8)   NOT NULL,
+    id_local       INT            PRIMARY KEY AUTO_INCREMENT,
+    id_instituicao INT            NOT NULL,
+    tipo_escola    VARCHAR(50)    NOT NULL,
+    nome           VARCHAR(255)   NOT NULL,
+    capacidade     INT            NOT NULL,
+    tipo           VARCHAR(50)    NOT NULL,
+    longitude      DECIMAL(17,15) NOT NULL,
+    latitude       DECIMAL(17,15) NOT NULL,
     CONSTRAINT fk_locais_instituicao
         FOREIGN KEY (id_instituicao)
         REFERENCES Instituicao(id_instituicao)
@@ -93,12 +93,12 @@ CREATE TABLE IF NOT EXISTS Locais (
 
 CREATE TABLE IF NOT EXISTS Evento (
     id_evento      INT PRIMARY KEY AUTO_INCREMENT,
-    nome VARCHAR(50) NOT NULL,
-    data DATETIME NOT NULL,
-    status VARCHAR(10) NOT NULL,
-    id_local       INT NOT NULL,
-    id_organizacao INT NOT NULL,
-    id_organizador INT NOT NULL,
+    nome           VARCHAR(50) NOT NULL,
+    data           DATETIME    NOT NULL,
+    status         VARCHAR(10) NOT NULL,
+    id_local       INT         NOT NULL,
+    id_organizacao INT         NOT NULL,
+    id_organizador INT         NOT NULL,
     CONSTRAINT fk_evento_local
         FOREIGN KEY (id_local)
         REFERENCES Locais(id_local)
@@ -193,11 +193,12 @@ ON DUPLICATE KEY UPDATE
     id_organizacao = VALUES(id_organizacao);
 
 INSERT INTO Locais (id_local, id_instituicao, tipo_escola, nome, capacidade, tipo, longitude, latitude) VALUES
-    (1, 1, 'Politecnica', 'Bloco 1', 120, 'Sala', '-49.2577', '-25.4420'),
-    (2, 1, 'Politecnica', 'Laboratorio de Informatica', 40, 'Laboratorio', '-49.2580', '-25.4425'),
-    (3, 1, 'Saude', 'Auditorio Central', 250, 'Auditorio', '-49.2584', '-25.4430'),
-    (4, 2, 'Tecnologia', 'Sala Maker', 30, 'Laboratorio', '-49.2600', '-25.4440'),
-    (5, 3, 'Humanas', 'Sala 101', 60, 'Sala', '-49.2610', '-25.4450')
+    (1, 1, 'Politecnica', 'Bloco 10', 120, 'Bloco', -49.249880109577190, -25.448778468099164),
+    (2, 1, 'Digital Arena', 'Digital Arena', 116, 'Auditorio', -49.251893347137590, -25.453128923965330),
+    (3, 1, 'Belas Artes', 'Bloco 5', 120, 'Bloco', -49.251388148925370, -25.449208632378372),
+    (4, 1, 'Politecnica', 'Bloco 1', 120, 'Bloco', -49.252468451503070, -25.450581456225787),
+    (5, 2, 'Tecnologia', 'Sala Maker', 30, 'Laboratorio', -49.260000000000000, -25.444000000000000),
+    (6, 3, 'Humanas', 'Sala 101', 60, 'Sala', -49.261000000000000, -25.445000000000000)
 ON DUPLICATE KEY UPDATE
     id_instituicao = VALUES(id_instituicao),
     tipo_escola = VALUES(tipo_escola),
