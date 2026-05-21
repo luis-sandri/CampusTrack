@@ -35,13 +35,17 @@ document.addEventListener("DOMContentLoaded", function () {
     var coordenadasPadrao = [-25.45275, -49.25083];
     var mapaLeaflet = null;
     var camadaLocais = null;
+    var camadaRota = null;
     var marcadoresLocais = {};
     var locaisMapa = [];
+    var grafoMapa = { nos: [], arestas: [] };
+    var grafoCarregado = false;
+    var grafoDisponivel = false;
+    var grafoPromise = null;
     var localSelecionado = null;
     var posicaoUsuario = null;
     var marcadorUsuario = null;
     var raioUsuario = null;
-    var linhaRota = null;
     var watchLocalizacaoId = null;
     var resizeMapaRegistrado = false;
     var localizacaoInicialSolicitada = false;
@@ -70,6 +74,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (mapaLocais) {
+            carregarGrafo(idInstituicao);
             carregarLocais(idInstituicao);
             verificarSessaoAluno();
         }
@@ -342,6 +347,38 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    function carregarGrafo(id) {
+        grafoMapa = { nos: [], arestas: [] };
+        grafoCarregado = false;
+        grafoDisponivel = false;
+        grafoPromise = null;
+
+        grafoPromise = fetch("../../php/mapa_grafo_get.php?id_instituicao=" + encodeURIComponent(id))
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (resposta) {
+            if (resposta.status !== "ok" || !Array.isArray(resposta.data) || resposta.data.length === 0) {
+                return;
+            }
+
+            grafoMapa = prepararGrafoMapa(resposta.data[0]);
+            grafoDisponivel = grafoMapa.nos.length > 0 && grafoMapa.arestas.length > 0;
+        })
+        .catch(function (error) {
+            console.error(error);
+        })
+        .finally(function () {
+            grafoCarregado = true;
+
+            if (localSelecionado && posicaoUsuario) {
+                desenharRotaAproximada(localSelecionado);
+            }
+        });
+
+        return grafoPromise;
+    }
+
     function carregarLocaisNoMapa(registros, mensagem, tipoMensagem) {
         locaisMapa = prepararLocaisMapa(registros);
 
@@ -478,6 +515,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }).addTo(mapaLeaflet);
 
         camadaLocais = L.layerGroup().addTo(mapaLeaflet);
+        camadaRota = L.layerGroup().addTo(mapaLeaflet);
 
         registrarResizeMapa();
 
@@ -846,6 +884,186 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function prepararGrafoMapa(dados) {
+        var nosEntrada = dados && Array.isArray(dados.nos) ? dados.nos : [];
+        var arestasEntrada = dados && Array.isArray(dados.arestas) ? dados.arestas : [];
+        var nos = [];
+        var nosPorId = {};
+        var arestas = [];
+
+        for (var i = 0; i < nosEntrada.length; i++) {
+            var latitude = parseCoordenada(nosEntrada[i].latitude);
+            var longitude = parseCoordenada(nosEntrada[i].longitude);
+            var idNo = String(nosEntrada[i].id_no || "");
+
+            if (idNo !== "" && coordenadaValida(latitude, longitude)) {
+                var no = {
+                    id_no: idNo,
+                    nome: nosEntrada[i].nome || "",
+                    latitude: latitude,
+                    longitude: longitude
+                };
+
+                nos.push(no);
+                nosPorId[idNo] = no;
+            }
+        }
+
+        for (var j = 0; j < arestasEntrada.length; j++) {
+            var origem = String(arestasEntrada[j].id_no_origem || "");
+            var destino = String(arestasEntrada[j].id_no_destino || "");
+            var distancia = parseFloat(String(arestasEntrada[j].distancia_metros || "").replace(",", "."));
+
+            if (!nosPorId[origem] || !nosPorId[destino]) {
+                continue;
+            }
+
+            if (!Number.isFinite(distancia) || distancia <= 0) {
+                distancia = distanciaMetros(
+                    nosPorId[origem].latitude,
+                    nosPorId[origem].longitude,
+                    nosPorId[destino].latitude,
+                    nosPorId[destino].longitude
+                );
+            }
+
+            arestas.push({
+                id_aresta: String(arestasEntrada[j].id_aresta || ""),
+                id_no_origem: origem,
+                id_no_destino: destino,
+                distancia_metros: distancia
+            });
+        }
+
+        return {
+            nos: nos,
+            nosPorId: nosPorId,
+            arestas: arestas
+        };
+    }
+
+    function buscarNoMaisProximo(latitude, longitude) {
+        if (!grafoMapa || !Array.isArray(grafoMapa.nos) || grafoMapa.nos.length === 0) {
+            return null;
+        }
+
+        var melhorNo = null;
+        var melhorDistancia = Infinity;
+
+        for (var i = 0; i < grafoMapa.nos.length; i++) {
+            var no = grafoMapa.nos[i];
+            var distancia = distanciaMetros(latitude, longitude, no.latitude, no.longitude);
+
+            if (distancia < melhorDistancia) {
+                melhorNo = no;
+                melhorDistancia = distancia;
+            }
+        }
+
+        return melhorNo;
+    }
+
+    function montarAdjacenciasGrafo() {
+        var adjacencias = {};
+
+        if (!grafoMapa || !Array.isArray(grafoMapa.nos) || !Array.isArray(grafoMapa.arestas)) {
+            return adjacencias;
+        }
+
+        for (var i = 0; i < grafoMapa.nos.length; i++) {
+            adjacencias[grafoMapa.nos[i].id_no] = [];
+        }
+
+        for (var j = 0; j < grafoMapa.arestas.length; j++) {
+            var aresta = grafoMapa.arestas[j];
+
+            if (!adjacencias[aresta.id_no_origem] || !adjacencias[aresta.id_no_destino]) {
+                continue;
+            }
+
+            adjacencias[aresta.id_no_origem].push({
+                id_no: aresta.id_no_destino,
+                distancia: aresta.distancia_metros
+            });
+
+            adjacencias[aresta.id_no_destino].push({
+                id_no: aresta.id_no_origem,
+                distancia: aresta.distancia_metros
+            });
+        }
+
+        return adjacencias;
+    }
+
+    function calcularMenorCaminho(idOrigem, idDestino) {
+        var adjacencias = montarAdjacenciasGrafo();
+        var distancias = {};
+        var anteriores = {};
+        var visitados = {};
+        var ids = Object.keys(adjacencias);
+
+        for (var i = 0; i < ids.length; i++) {
+            distancias[ids[i]] = Infinity;
+            anteriores[ids[i]] = null;
+        }
+
+        if (!adjacencias[idOrigem] || !adjacencias[idDestino]) {
+            return null;
+        }
+
+        distancias[idOrigem] = 0;
+
+        while (true) {
+            var atual = null;
+            var menorDistancia = Infinity;
+
+            for (var j = 0; j < ids.length; j++) {
+                var id = ids[j];
+                if (!visitados[id] && distancias[id] < menorDistancia) {
+                    atual = id;
+                    menorDistancia = distancias[id];
+                }
+            }
+
+            if (atual === null || atual === idDestino) {
+                break;
+            }
+
+            visitados[atual] = true;
+
+            for (var k = 0; k < adjacencias[atual].length; k++) {
+                var vizinho = adjacencias[atual][k];
+                var novaDistancia = distancias[atual] + vizinho.distancia;
+
+                if (novaDistancia < distancias[vizinho.id_no]) {
+                    distancias[vizinho.id_no] = novaDistancia;
+                    anteriores[vizinho.id_no] = atual;
+                }
+            }
+        }
+
+        if (!Number.isFinite(distancias[idDestino])) {
+            return null;
+        }
+
+        var caminho = [];
+        var cursor = idDestino;
+
+        while (cursor !== null) {
+            caminho.unshift(cursor);
+            cursor = anteriores[cursor];
+        }
+
+        if (caminho[0] !== idOrigem) {
+            return null;
+        }
+
+        return {
+            caminho: caminho,
+            distancia: distancias[idDestino]
+        };
+    }
+
     function desenharRotaAproximada(local) {
         if (!mapaLeaflet || !posicaoUsuario || !local) {
             return;
@@ -854,16 +1072,82 @@ document.addEventListener("DOMContentLoaded", function () {
         var origem = [posicaoUsuario.latitude, posicaoUsuario.longitude];
         var destino = [local.latitude, local.longitude];
 
-        if (linhaRota) {
-            mapaLeaflet.removeLayer(linhaRota);
+        limparCamadaRota();
+
+        if (!grafoCarregado && grafoPromise) {
+            atualizarMapaStatus("Carregando caminhos do campus para calcular a rota...");
+            grafoPromise.finally(function () {
+                if (localSelecionado === local && posicaoUsuario) {
+                    desenharRotaAproximada(local);
+                }
+            });
+            return;
         }
 
-        linhaRota = L.polyline([origem, destino], {
+        if (desenharRotaPeloGrafo(local, origem, destino)) {
+            return;
+        }
+
+        desenharRotaReta(local, origem, destino);
+    }
+
+    function desenharRotaPeloGrafo(local, origem, destino) {
+        if (!grafoCarregado || !grafoDisponivel) {
+            return false;
+        }
+
+        var noOrigem = buscarNoMaisProximo(origem[0], origem[1]);
+        var noDestino = buscarNoMaisProximo(destino[0], destino[1]);
+
+        if (!noOrigem || !noDestino) {
+            return false;
+        }
+
+        var rota = calcularMenorCaminho(noOrigem.id_no, noDestino.id_no);
+
+        if (!rota || rota.caminho.length === 0) {
+            return false;
+        }
+
+        var pontos = [origem];
+
+        for (var i = 0; i < rota.caminho.length; i++) {
+            var no = grafoMapa.nosPorId[rota.caminho[i]];
+            if (no) {
+                pontos.push([no.latitude, no.longitude]);
+            }
+        }
+
+        pontos.push(destino);
+
+        L.polyline(pontos, {
+            color: "#1d4ed8",
+            opacity: 0.95,
+            weight: 5
+        }).addTo(camadaRota || mapaLeaflet);
+
+        mapaLeaflet.fitBounds(L.latLngBounds(pontos).pad(0.25));
+
+        if (btnLimparRota) {
+            btnLimparRota.disabled = false;
+        }
+
+        var distanciaConectores =
+            distanciaMetros(origem[0], origem[1], noOrigem.latitude, noOrigem.longitude) +
+            distanciaMetros(noDestino.latitude, noDestino.longitude, destino[0], destino[1]);
+        var distanciaTotal = rota.distancia + distanciaConectores;
+
+        atualizarMapaStatus("Rota ate " + local.nome + ": " + formatarDistancia(distanciaTotal) + " por caminhos cadastrados do campus.");
+        return true;
+    }
+
+    function desenharRotaReta(local, origem, destino) {
+        L.polyline([origem, destino], {
             color: "#1d4ed8",
             dashArray: "8 8",
             opacity: 0.9,
             weight: 5
-        }).addTo(mapaLeaflet);
+        }).addTo(camadaRota || mapaLeaflet);
 
         mapaLeaflet.fitBounds(L.latLngBounds([origem, destino]).pad(0.25));
 
@@ -872,15 +1156,17 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         var distancia = distanciaMetros(posicaoUsuario.latitude, posicaoUsuario.longitude, local.latitude, local.longitude);
-        atualizarMapaStatus("Rota aproximada ate " + local.nome + ": " + formatarDistancia(distancia) + ". O caminho real sera ajustado quando o grafo do campus for cadastrado.");
+        atualizarMapaStatus("Rota aproximada ate " + local.nome + ": " + formatarDistancia(distancia) + ". Caminho cadastrado indisponivel para este trecho.", "warning");
+    }
+
+    function limparCamadaRota() {
+        if (camadaRota) {
+            camadaRota.clearLayers();
+        }
     }
 
     function limparRota() {
-        if (linhaRota && mapaLeaflet) {
-            mapaLeaflet.removeLayer(linhaRota);
-        }
-
-        linhaRota = null;
+        limparCamadaRota();
         localSelecionado = null;
 
         if (btnLimparRota) {
