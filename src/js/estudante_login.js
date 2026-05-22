@@ -43,6 +43,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var grafoDisponivel = false;
     var grafoPromise = null;
     var localSelecionado = null;
+    var favoritosAluno = {};
     var posicaoUsuario = null;
     var marcadorUsuario = null;
     var raioUsuario = null;
@@ -77,6 +78,7 @@ document.addEventListener("DOMContentLoaded", function () {
             carregarGrafo(idInstituicao);
             carregarLocais(idInstituicao);
             verificarSessaoAluno();
+            carregarFavoritos();
         }
     } else if (inputIdInstituicao) {
         mostrarAlerta("Instituicao nao informada ou invalida.", "danger");
@@ -604,7 +606,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function montarPopupLocal(local) {
-        var html = '<strong>' + escapeHtml(local.nome) + '</strong>';
+        var favClasse = favoritosAluno[local.id_local] ? " is-favorito" : "";
+        var favIcone = favoritosAluno[local.id_local] ? "&#9733;" : "&#9734;";
+        var html = '<div class="d-flex align-items-start justify-content-between gap-2">';
+        html += '<div>';
+        html += '<strong>' + escapeHtml(local.nome) + '</strong>';
         html += '<div class="small text-muted">' + escapeHtml(local.tipo_escola) + ' - ' + escapeHtml(local.tipo) + '</div>';
         if (local.capacidade !== "") {
             html += '<div class="small">Capacidade: ' + escapeHtml(local.capacidade) + '</div>';
@@ -612,6 +618,9 @@ document.addEventListener("DOMContentLoaded", function () {
         if (local.observacao !== "") {
             html += '<div class="small text-muted">' + escapeHtml(local.observacao) + '</div>';
         }
+        html += '</div>';
+        html += '<button type="button" class="ct-btn-favorito' + favClasse + '" data-favorito-local="' + escapeHtml(local.id_local) + '" title="Favoritar">' + favIcone + '</button>';
+        html += '</div>';
         html += '<button type="button" class="btn btn-primary btn-sm mt-2" data-rota-local="' + escapeHtml(local.id_local) + '">Tracar rota</button>';
         return html;
     }
@@ -687,8 +696,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
         for (var j = 0; j < filtrados.length; j++) {
             var ativo = localSelecionado && localSelecionado.id_local === filtrados[j].id_local ? " is-active" : "";
+            var favClasseRes = favoritosAluno[filtrados[j].id_local] ? " is-favorito" : "";
+            var favIconeRes = favoritosAluno[filtrados[j].id_local] ? "&#9733;" : "&#9734;";
             html += '<button type="button" class="ct-location-result' + ativo + '" data-id-local="' + escapeHtml(filtrados[j].id_local) + '">';
-            html += '<span class="fw-semibold d-block">' + escapeHtml(filtrados[j].nome) + '</span>';
+            html += '<span class="d-flex align-items-center justify-content-between">';
+            html += '<span class="fw-semibold">' + escapeHtml(filtrados[j].nome) + '</span>';
+            html += '<span class="ct-btn-favorito' + favClasseRes + '" data-favorito-local="' + escapeHtml(filtrados[j].id_local) + '" title="Favoritar">' + favIconeRes + '</span>';
+            html += '</span>';
             html += '<span class="text-muted">' + escapeHtml(filtrados[j].tipo_escola) + ' - ' + escapeHtml(filtrados[j].tipo) + '</span>';
             html += '</button>';
         }
@@ -1258,6 +1272,7 @@ document.addEventListener("DOMContentLoaded", function () {
             desabilitarLinkAluno(linkCadastroAluno);
             desabilitarLinkAluno(linkLoginAluno);
             exibirLogoutAluno(true);
+            carregarFavoritos();
         })
         .catch(function () {
             document.body.setAttribute("data-aluno-logado", "false");
@@ -1300,6 +1315,77 @@ document.addEventListener("DOMContentLoaded", function () {
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
+    }
+
+    function carregarFavoritos() {
+        if (document.body.getAttribute("data-aluno-logado") === "false") {
+            return;
+        }
+
+        fetch("../../php/favorito_get.php")
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (resposta) {
+            favoritosAluno = {};
+
+            if (resposta.status === "ok" && Array.isArray(resposta.data)) {
+                for (var i = 0; i < resposta.data.length; i++) {
+                    favoritosAluno[String(resposta.data[i].id_local)] = true;
+                }
+            }
+
+            atualizarResultadosBusca();
+            atualizarPopupsAbertos();
+        })
+        .catch(function () {});
+    }
+
+    function alternarFavorito(idLocal) {
+        if (document.body.getAttribute("data-aluno-logado") !== "true") {
+            atualizarMapaStatus("Faca login como estudante para favoritar locais.", "warning");
+            return;
+        }
+
+        var dados = new FormData();
+        dados.append("id_local", idLocal);
+
+        fetch("../../php/favorito_adicionar.php", {
+            method: "POST",
+            body: dados
+        })
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (resposta) {
+            if (resposta.status === "ok" && Array.isArray(resposta.data) && resposta.data.length > 0) {
+                if (resposta.data[0].favorito) {
+                    favoritosAluno[String(idLocal)] = true;
+                } else {
+                    delete favoritosAluno[String(idLocal)];
+                }
+
+                atualizarResultadosBusca();
+                atualizarPopupsAbertos();
+                atualizarMapaStatus(resposta.mensagem);
+            } else {
+                atualizarMapaStatus(resposta.mensagem || "Erro ao favoritar.", "danger");
+            }
+        })
+        .catch(function () {
+            atualizarMapaStatus("Erro de conexao ao favoritar.", "danger");
+        });
+    }
+
+    function atualizarPopupsAbertos() {
+        for (var id in marcadoresLocais) {
+            if (marcadoresLocais[id] && marcadoresLocais[id].isPopupOpen()) {
+                var local = buscarLocalPorId(id);
+                if (local) {
+                    marcadoresLocais[id].setPopupContent(montarPopupLocal(local));
+                }
+            }
+        }
     }
 
     function sairAluno() {
@@ -1355,6 +1441,13 @@ document.addEventListener("DOMContentLoaded", function () {
         prepararRolagemResultados();
 
         resultadoLocais.addEventListener("click", function (e) {
+            var botaoFav = e.target.closest("[data-favorito-local]");
+            if (botaoFav) {
+                e.stopPropagation();
+                alternarFavorito(botaoFav.getAttribute("data-favorito-local"));
+                return;
+            }
+
             var botao = e.target.closest("[data-id-local]");
             if (!botao) {
                 return;
@@ -1366,6 +1459,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (mapaLocais) {
         mapaLocais.addEventListener("click", function (e) {
+            var botaoFav = e.target.closest("[data-favorito-local]");
+            if (botaoFav) {
+                e.stopPropagation();
+                alternarFavorito(botaoFav.getAttribute("data-favorito-local"));
+                return;
+            }
+
             var botao = e.target.closest("[data-rota-local]");
             if (!botao) {
                 return;
