@@ -15,9 +15,17 @@
       color: #212529;
       padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));
     }
-    .ct-placeholder {
+    .ct-page {
       min-height: calc(100vh - 4.75rem);
       min-height: calc(100svh - 4.75rem);
+    }
+    .ct-event-card {
+      border-color: #d1d5db;
+      border-radius: 0.5rem;
+    }
+    .ct-event-meta {
+      color: #4b5563;
+      font-size: 0.92rem;
     }
     .ct-mobile-tabbar {
       align-items: stretch;
@@ -52,12 +60,15 @@
   </style>
 </head>
 <body>
-  <main class="ct-placeholder container d-flex align-items-center justify-content-center py-5 text-center">
-    <section class="bg-white border rounded-3 p-4 shadow-sm">
+  <main class="ct-page container py-4">
+    <header class="mb-4">
       <img src="../../../assets/logo-campustrack.png" alt="CampusTrack" width="48" height="48" class="mb-3">
-      <h1 class="h4 fw-bold text-primary">Eventos</h1>
-      <p class="text-secondary mb-0">Esta secao esta em producao. Em breve voce vera os eventos ativos da instituicao aqui.</p>
-    </section>
+      <h1 class="h4 fw-bold text-primary mb-1">Evntos</h1>
+      <p class="text-secondary mb-0">Eventos ativos disponiveis na instituicao.</p>
+    </header>
+
+    <section id="alerta-eventos" class="alert d-none" role="alert"></section>
+    <section id="lista-eventos" class="row g-3" aria-live="polite"></section>
   </main>
 
   <nav class="ct-mobile-tabbar" aria-label="Navegacao do estudante">
@@ -68,5 +79,6 @@
   </nav>
 
   <script src="../../js/estudante_nav.js" defer></script>
+  <script src="../../js/estudante_eventos.js" defer></script>
 </body>
 </html>
