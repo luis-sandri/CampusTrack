@@ -25,9 +25,15 @@
         <img src="../../../assets/logo-campustrack.png" alt="Logo" width="40" height="40" class="d-inline-block align-text-top me-2">
         CampusTrack | Estudante
       </a>
-      <div class="d-flex">
-          <span class="navbar-text me-3 fw-medium" id="usuario-email"></span>
-          <a href="../index.html" class="btn btn-outline-danger btn-sm">Sair</a>
+      <div class="btn-group dropstart">
+        <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+          Menu
+        </button>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item link-primary" href="../index.html">Página inicial</a></li>
+          <li><a class="dropdown-item link-primary active" href="dashboard.html" aria-current="page">Meu painel</a></li>
+          <li><a class="dropdown-item link-primary" href="favoritos.html">Meus favoritos</a></li>
+        </ul>
       </div>
     </div>
   </nav>

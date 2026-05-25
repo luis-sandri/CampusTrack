@@ -22,11 +22,14 @@ document.addEventListener("DOMContentLoaded", function () {
     var linkVoltarMapa = document.getElementById("link-voltar-mapa");
     var linkCadastroAluno = document.getElementById("link-cadastro-aluno");
     var linkLoginAluno = document.getElementById("link-login-aluno");
+    var linkFavoritosAluno = document.getElementById("link-favoritos-aluno");
+    var itemFavoritosAluno = document.getElementById("item-favoritos-aluno");
     var btnMenuEstudante = document.getElementById("btn-menu-estudante");
     var itemSeparadorLogoutAluno = document.getElementById("item-separador-logout-aluno");
     var itemLogoutAluno = document.getElementById("item-logout-aluno");
     var btnLogoutAluno = document.getElementById("btn-logout-aluno");
     var inputModo = document.getElementById("modo");
+    var idsFavoritados = new Set();
     var tituloEstudante = document.getElementById("titulo-estudante");
     var linksNavegacaoAluno = document.querySelectorAll(".ct-desktop-nav a, .ct-mobile-tabbar a");
 
@@ -75,8 +78,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (mapaLocais) {
-            carregarGrafo(idInstituicao);
-            carregarLocais(idInstituicao);
             verificarSessaoAluno();
             carregarFavoritos();
         }
@@ -147,6 +148,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (linkLoginAluno) {
             linkLoginAluno.href = "../estudante/login.html" + queryLogin;
+        }
+
+        if (linkFavoritosAluno) {
+            linkFavoritosAluno.href = "../estudante/favoritos.html";
         }
     }
 
@@ -378,11 +383,38 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 
-        return grafoPromise;
-    }
+            var alunoLogado = document.body.getAttribute("data-aluno-logado") === "true";
 
-    function carregarLocaisNoMapa(registros, mensagem, tipoMensagem) {
-        locaisMapa = prepararLocaisMapa(registros);
+            var html = "";
+            for (var i = 0; i < registros.length; i++) {
+                var local = registros[i];
+                var favoritado = idsFavoritados.has(String(local.id_local));
+                var btnFavorito = "";
+
+                if (alunoLogado) {
+                    btnFavorito =
+                        '<button ' +
+                            'class="btn btn-sm ct-btn-favorito ' + (favoritado ? 'btn-warning' : 'btn-outline-secondary') + ' ms-auto" ' +
+                            'data-id-local="' + escapeHtml(local.id_local) + '" ' +
+                            'title="' + (favoritado ? 'Remover dos favoritos' : 'Adicionar aos favoritos') + '" ' +
+                            'aria-label="' + (favoritado ? 'Remover ' : 'Favoritar ') + escapeHtml(local.nome) + '" ' +
+                            'aria-pressed="' + (favoritado ? 'true' : 'false') + '">' +
+                            (favoritado ? '★' : '☆') +
+                        '</button>';
+                }
+
+                html += '<div class="col-md-6">';
+                html += '<div class="border rounded-3 p-3 h-100 bg-light">';
+                html += '<div class="d-flex align-items-start gap-2 mb-1">';
+                html += '<h3 class="h6 fw-bold mb-0 flex-grow-1">' + escapeHtml(local.nome) + '</h3>';
+                html += btnFavorito;
+                html += '</div>';
+                html += '<p class="small text-muted mb-2">' + escapeHtml(local.tipo_escola) + ' - ' + escapeHtml(local.tipo) + '</p>';
+                html += '<p class="small mb-0">Capacidade: ' + escapeHtml(local.capacidade) + '</p>';
+                html += '<p class="small mb-0">Longitude: ' + escapeHtml(local.longitude) + '</p>';
+                html += '<p class="small mb-0">Latitude: ' + escapeHtml(local.latitude) + '</p>';
+                html += '</div>';
+                html += '</div>';
 
         if (registros.length > 0 && registros[0].nome_instituicao) {
             var idInstituicaoTexto = document.getElementById("id-instituicao");
@@ -393,7 +425,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (locaisMapa.length === 0) {
             if (listaLocais) {
-                listaLocais.innerHTML = '<div class="col-12 text-muted">Nenhum local cadastrado para esta instituicao.</div>';
+                listaLocais.innerHTML = html;
+
+                // Vincula eventos de favorito após render
+                var botoes = listaLocais.querySelectorAll(".ct-btn-favorito");
+                for (var j = 0; j < botoes.length; j++) {
+                    botoes[j].addEventListener("click", aoClicarFavorito);
+                }
             }
             if (mapaVazio) {
                 mapaVazio.textContent = "Nenhum local com coordenadas validas para esta instituicao.";
@@ -545,709 +583,65 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function prepararLocaisMapa(registros) {
-        var locais = [];
-
-        for (var i = 0; i < registros.length; i++) {
-            var local = registros[i];
-            var latitude = parseCoordenada(local.latitude);
-            var longitude = parseCoordenada(local.longitude);
-
-            if (coordenadaValida(latitude, longitude)) {
-                locais.push({
-                    id_local: String(local.id_local),
-                    nome: local.nome || "",
-                    tipo_escola: local.tipo_escola || "",
-                    tipo: local.tipo || "",
-                    capacidade: local.capacidade || "",
-                    nome_instituicao: local.nome_instituicao || "",
-                    fixo: local.fixo === true,
-                    observacao: local.observacao || "",
-                    latitude: latitude,
-                    longitude: longitude
-                });
+    function carregarFavoritosAluno(idInstituicaoParam) {
+        fetch("../../php/favorito_get.php")
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (resposta) {
+            idsFavoritados = new Set();
+            if (resposta.status === "ok" && Array.isArray(resposta.data)) {
+                for (var i = 0; i < resposta.data.length; i++) {
+                    idsFavoritados.add(String(resposta.data[i].id_local));
+                }
             }
-        }
-
-        return locais;
-    }
-
-    function parseCoordenada(valor) {
-        return Number(String(valor === null || valor === undefined ? "" : valor).replace(",", "."));
-    }
-
-    function coordenadaValida(latitude, longitude) {
-        return Number.isFinite(latitude) && Number.isFinite(longitude) &&
-            latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
-    }
-
-    function desenharLocaisNoMapa() {
-        marcadoresLocais = {};
-
-        if (!camadaLocais) {
-            return;
-        }
-
-        camadaLocais.clearLayers();
-
-        for (var i = 0; i < locaisMapa.length; i++) {
-            adicionarMarcadorLocal(locaisMapa[i]);
-        }
-    }
-
-    function adicionarMarcadorLocal(local) {
-        var marcador = L.marker([local.latitude, local.longitude]);
-        marcador.bindPopup(montarPopupLocal(local));
-        marcador.on("click", function () {
-            selecionarLocal(local.id_local, false);
+            // Re-renderiza os locais já carregados com o estado correto de favorito
+            carregarLocais(idInstituicaoParam);
+        })
+        .catch(function () {
+            carregarLocais(idInstituicaoParam);
         });
-        marcador.addTo(camadaLocais);
-        marcadoresLocais[local.id_local] = marcador;
     }
 
-    function montarPopupLocal(local) {
-        var favClasse = favoritosAluno[local.id_local] ? " is-favorito" : "";
-        var favIcone = favoritosAluno[local.id_local] ? "&#9733;" : "&#9734;";
-        var html = '<div class="d-flex align-items-start justify-content-between gap-2">';
-        html += '<div>';
-        html += '<strong>' + escapeHtml(local.nome) + '</strong>';
-        html += '<div class="small text-muted">' + escapeHtml(local.tipo_escola) + ' - ' + escapeHtml(local.tipo) + '</div>';
-        if (local.capacidade !== "") {
-            html += '<div class="small">Capacidade: ' + escapeHtml(local.capacidade) + '</div>';
-        }
-        if (local.observacao !== "") {
-            html += '<div class="small text-muted">' + escapeHtml(local.observacao) + '</div>';
-        }
-        html += '</div>';
-        html += '<button type="button" class="ct-btn-favorito' + favClasse + '" data-favorito-local="' + escapeHtml(local.id_local) + '" title="Favoritar">' + favIcone + '</button>';
-        html += '</div>';
-        html += '<button type="button" class="btn btn-primary btn-sm mt-2" data-rota-local="' + escapeHtml(local.id_local) + '">Tracar rota</button>';
-        return html;
-    }
+    function aoClicarFavorito(event) {
+        var botao   = event.currentTarget;
+        var idLocal = botao.getAttribute("data-id-local");
+        var estaFavoritado = idsFavoritados.has(idLocal);
+        var endpoint = estaFavoritado ? "../../php/favorito_remover.php" : "../../php/favorito_adicionar.php";
 
-    function ajustarMapaAosLocais() {
-        if (!mapaLeaflet || locaisMapa.length === 0) {
-            return;
-        }
+        botao.disabled = true;
 
-        var pontos = [];
-        for (var i = 0; i < locaisMapa.length; i++) {
-            pontos.push([locaisMapa[i].latitude, locaisMapa[i].longitude]);
-        }
+        var formData = new FormData();
+        formData.append("id_local", idLocal);
 
-        var bounds = L.latLngBounds(pontos);
-
-        if (locaisMapa.length === 1) {
-            mapaLeaflet.setView(pontos[0], 18);
-        } else {
-            mapaLeaflet.fitBounds(bounds.pad(0.25));
-            mapaLeaflet.setMaxBounds(bounds.pad(0.8));
-        }
-    }
-
-    function montarListaLocais(locais) {
-        var html = "";
-
-        for (var i = 0; i < locais.length; i++) {
-            html += '<div class="col-md-6">';
-            html += '<div class="border rounded-3 p-3 h-100 bg-light">';
-            html += '<h3 class="h6 fw-bold mb-1">' + escapeHtml(locais[i].nome) + '</h3>';
-            html += '<p class="small text-muted mb-2">' + escapeHtml(locais[i].tipo_escola) + ' - ' + escapeHtml(locais[i].tipo) + '</p>';
-            if (locais[i].observacao !== "") {
-                html += '<p class="small text-muted mb-2">' + escapeHtml(locais[i].observacao) + '</p>';
-            }
-            html += '<p class="small mb-0">Capacidade: ' + escapeHtml(locais[i].capacidade) + '</p>';
-            html += '<p class="small mb-0">Longitude: ' + escapeHtml(locais[i].longitude) + '</p>';
-            html += '<p class="small mb-0">Latitude: ' + escapeHtml(locais[i].latitude) + '</p>';
-            html += '</div>';
-            html += '</div>';
-        }
-
-        return html;
-    }
-
-    function atualizarResultadosBusca() {
-        if (!resultadoLocais) {
-            return;
-        }
-
-        atualizarEstadoBuscaMapa();
-
-        var termo = normalizarTexto(buscaLocal ? buscaLocal.value : "");
-        var filtrados = [];
-
-        for (var i = 0; i < locaisMapa.length; i++) {
-            if (termo === "" || textoBuscaLocal(locaisMapa[i]).indexOf(termo) !== -1) {
-                filtrados.push(locaisMapa[i]);
-            }
-        }
-
-        if (locaisMapa.length === 0) {
-            resultadoLocais.innerHTML = '<div class="text-muted py-2">Nenhum local disponivel.</div>';
-            return;
-        }
-
-        if (filtrados.length === 0) {
-            resultadoLocais.innerHTML = '<div class="text-muted py-2">Nenhum local encontrado.</div>';
-            return;
-        }
-
-        var html = "";
-
-        for (var j = 0; j < filtrados.length; j++) {
-            var ativo = localSelecionado && localSelecionado.id_local === filtrados[j].id_local ? " is-active" : "";
-            var favClasseRes = favoritosAluno[filtrados[j].id_local] ? " is-favorito" : "";
-            var favIconeRes = favoritosAluno[filtrados[j].id_local] ? "&#9733;" : "&#9734;";
-            html += '<button type="button" class="ct-location-result' + ativo + '" data-id-local="' + escapeHtml(filtrados[j].id_local) + '">';
-            html += '<span class="d-flex align-items-center justify-content-between">';
-            html += '<span class="fw-semibold">' + escapeHtml(filtrados[j].nome) + '</span>';
-            html += '<span class="ct-btn-favorito' + favClasseRes + '" data-favorito-local="' + escapeHtml(filtrados[j].id_local) + '" title="Favoritar">' + favIconeRes + '</span>';
-            html += '</span>';
-            html += '<span class="text-muted">' + escapeHtml(filtrados[j].tipo_escola) + ' - ' + escapeHtml(filtrados[j].tipo) + '</span>';
-            html += '</button>';
-        }
-
-        resultadoLocais.innerHTML = html;
-    }
-
-    function prepararRolagemResultados() {
-        if (!resultadoLocais) {
-            return;
-        }
-
-        if (typeof L !== "undefined" && L.DomEvent) {
-            L.DomEvent.disableScrollPropagation(resultadoLocais);
-            L.DomEvent.disableClickPropagation(resultadoLocais);
-        }
-
-        var pararPropagacao = function (e) {
-            e.stopPropagation();
-        };
-
-        resultadoLocais.addEventListener("wheel", pararPropagacao, { passive: true });
-        resultadoLocais.addEventListener("touchstart", pararPropagacao, { passive: true });
-        resultadoLocais.addEventListener("touchmove", pararPropagacao, { passive: true });
-        resultadoLocais.addEventListener("pointerdown", pararPropagacao);
-        resultadoLocais.addEventListener("pointermove", pararPropagacao);
-    }
-
-    function atualizarEstadoBuscaMapa(ativo) {
-        if (!painelMapa) {
-            return;
-        }
-
-        var buscaAtiva = typeof ativo === "boolean"
-            ? ativo
-            : buscaLocal && (buscaLocal.value.trim() !== "" || document.activeElement === buscaLocal);
-
-        if (buscaAtiva) {
-            painelMapa.classList.add("ct-search-open");
-        } else {
-            painelMapa.classList.remove("ct-search-open");
-        }
-    }
-
-    function textoBuscaLocal(local) {
-        return normalizarTexto(local.nome + " " + local.tipo_escola + " " + local.tipo);
-    }
-
-    function normalizarTexto(valor) {
-        return String(valor === null || valor === undefined ? "" : valor)
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "");
-    }
-
-    function selecionarLocal(idLocal, abrirPopup) {
-        var local = buscarLocalPorId(idLocal);
-        if (!local || !mapaLeaflet) {
-            return;
-        }
-
-        localSelecionado = local;
-        if (buscaLocal && window.matchMedia("(max-width: 767.98px)").matches) {
-            buscaLocal.value = "";
-        }
-        atualizarEstadoBuscaMapa(false);
-        if (buscaLocal) {
-            buscaLocal.blur();
-        }
-        mapaLeaflet.setView([local.latitude, local.longitude], Math.max(mapaLeaflet.getZoom(), 18));
-
-        if (marcadoresLocais[local.id_local] && abrirPopup !== false) {
-            marcadoresLocais[local.id_local].openPopup();
-        }
-
-        atualizarResultadosBusca();
-
-        if (posicaoUsuario) {
-            desenharRotaAproximada(local);
-        } else {
-            atualizarMapaStatus("Destino selecionado. Use sua localizacao para tracar uma rota aproximada.");
-        }
-    }
-
-    function buscarLocalPorId(idLocal) {
-        var id = String(idLocal);
-
-        for (var i = 0; i < locaisMapa.length; i++) {
-            if (locaisMapa[i].id_local === id) {
-                return locaisMapa[i];
-            }
-        }
-
-        return null;
-    }
-
-    function localizarEstudante() {
-        if (!mapaLeaflet) {
-            atualizarMapaStatus("Aguarde o mapa carregar para usar sua localizacao.", "warning");
-            return;
-        }
-
-        if (!navigator.geolocation) {
-            atualizarMapaStatus("Seu navegador nao permite geolocalizacao.", "danger");
-            return;
-        }
-
-        if (btnLocalizarEstudante) {
-            btnLocalizarEstudante.disabled = true;
-            btnLocalizarEstudante.textContent = "Localizando...";
-        }
-
-        if (watchLocalizacaoId !== null) {
-            navigator.geolocation.clearWatch(watchLocalizacaoId);
-        }
-
-        watchLocalizacaoId = navigator.geolocation.watchPosition(
-            function (posicao) {
-                atualizarPosicaoUsuario(posicao);
-                if (btnLocalizarEstudante) {
-                    btnLocalizarEstudante.disabled = false;
-                    btnLocalizarEstudante.textContent = "Atualizar minha localizacao";
+        fetch(endpoint, { method: "POST", body: formData })
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (retorno) {
+            if (retorno.status === "ok") {
+                if (estaFavoritado) {
+                    idsFavoritados.delete(idLocal);
+                    botao.textContent = "☆";
+                    botao.setAttribute("aria-pressed", "false");
+                    botao.setAttribute("title", "Adicionar aos favoritos");
+                    botao.className = botao.className.replace("btn-warning", "btn-outline-secondary");
+                } else {
+                    idsFavoritados.add(idLocal);
+                    botao.textContent = "★";
+                    botao.setAttribute("aria-pressed", "true");
+                    botao.setAttribute("title", "Remover dos favoritos");
+                    botao.className = botao.className.replace("btn-outline-secondary", "btn-warning");
                 }
-            },
-            function () {
-                if (btnLocalizarEstudante) {
-                    btnLocalizarEstudante.disabled = false;
-                    btnLocalizarEstudante.textContent = "Usar minha localizacao";
-                }
-                atualizarMapaStatus("Nao foi possivel obter sua localizacao. Verifique a permissao do navegador.", "danger");
-            },
-            {
-                enableHighAccuracy: true,
-                maximumAge: 10000,
-                timeout: 15000
-            }
-        );
-    }
-
-    function solicitarLocalizacaoInicial() {
-        if (localizacaoInicialSolicitada || !mapaLeaflet) {
-            return;
-        }
-
-        localizacaoInicialSolicitada = true;
-        localizarEstudante();
-    }
-
-    function atualizarPosicaoUsuario(posicao) {
-        var latitude = posicao.coords.latitude;
-        var longitude = posicao.coords.longitude;
-        var precisao = posicao.coords.accuracy || 0;
-
-        posicaoUsuario = {
-            latitude: latitude,
-            longitude: longitude,
-            precisao: precisao
-        };
-
-        var coordenadas = [latitude, longitude];
-
-        if (!marcadorUsuario) {
-            marcadorUsuario = L.circleMarker(coordenadas, {
-                className: "ct-user-location",
-                radius: 8,
-                fillColor: "#16a34a",
-                fillOpacity: 1,
-                color: "#ffffff",
-                weight: 3
-            }).addTo(mapaLeaflet).bindPopup("Voce esta aqui");
-        } else {
-            marcadorUsuario.setLatLng(coordenadas);
-        }
-
-        if (!raioUsuario) {
-            raioUsuario = L.circle(coordenadas, {
-                radius: precisao,
-                color: "#16a34a",
-                fillColor: "#16a34a",
-                fillOpacity: 0.08,
-                weight: 1
-            }).addTo(mapaLeaflet);
-        } else {
-            raioUsuario.setLatLng(coordenadas);
-            raioUsuario.setRadius(precisao);
-        }
-
-        if (localSelecionado) {
-            desenharRotaAproximada(localSelecionado);
-        } else {
-            mapaLeaflet.setView(coordenadas, Math.max(mapaLeaflet.getZoom(), 18));
-            atualizarMapaStatus("Localizacao encontrada. Selecione um destino para tracar a rota aproximada.");
-        }
-    }
-
-    function prepararGrafoMapa(dados) {
-        var nosEntrada = dados && Array.isArray(dados.nos) ? dados.nos : [];
-        var arestasEntrada = dados && Array.isArray(dados.arestas) ? dados.arestas : [];
-        var nos = [];
-        var nosPorId = {};
-        var arestas = [];
-
-        for (var i = 0; i < nosEntrada.length; i++) {
-            var latitude = parseCoordenada(nosEntrada[i].latitude);
-            var longitude = parseCoordenada(nosEntrada[i].longitude);
-            var idNo = String(nosEntrada[i].id_no || "");
-
-            if (idNo !== "" && coordenadaValida(latitude, longitude)) {
-                var no = {
-                    id_no: idNo,
-                    nome: nosEntrada[i].nome || "",
-                    latitude: latitude,
-                    longitude: longitude
-                };
-
-                nos.push(no);
-                nosPorId[idNo] = no;
-            }
-        }
-
-        for (var j = 0; j < arestasEntrada.length; j++) {
-            var origem = String(arestasEntrada[j].id_no_origem || "");
-            var destino = String(arestasEntrada[j].id_no_destino || "");
-            var distancia = parseFloat(String(arestasEntrada[j].distancia_metros || "").replace(",", "."));
-
-            if (!nosPorId[origem] || !nosPorId[destino]) {
-                continue;
-            }
-
-            if (!Number.isFinite(distancia) || distancia <= 0) {
-                distancia = distanciaMetros(
-                    nosPorId[origem].latitude,
-                    nosPorId[origem].longitude,
-                    nosPorId[destino].latitude,
-                    nosPorId[destino].longitude
-                );
-            }
-
-            arestas.push({
-                id_aresta: String(arestasEntrada[j].id_aresta || ""),
-                id_no_origem: origem,
-                id_no_destino: destino,
-                distancia_metros: distancia
-            });
-        }
-
-        return {
-            nos: nos,
-            nosPorId: nosPorId,
-            arestas: arestas
-        };
-    }
-
-    function buscarNoMaisProximo(latitude, longitude) {
-        if (!grafoMapa || !Array.isArray(grafoMapa.nos) || grafoMapa.nos.length === 0) {
-            return null;
-        }
-
-        var melhorNo = null;
-        var melhorDistancia = Infinity;
-
-        for (var i = 0; i < grafoMapa.nos.length; i++) {
-            var no = grafoMapa.nos[i];
-            var distancia = distanciaMetros(latitude, longitude, no.latitude, no.longitude);
-
-            if (distancia < melhorDistancia) {
-                melhorNo = no;
-                melhorDistancia = distancia;
-            }
-        }
-
-        return melhorNo;
-    }
-
-    function montarAdjacenciasGrafo() {
-        var adjacencias = {};
-
-        if (!grafoMapa || !Array.isArray(grafoMapa.nos) || !Array.isArray(grafoMapa.arestas)) {
-            return adjacencias;
-        }
-
-        for (var i = 0; i < grafoMapa.nos.length; i++) {
-            adjacencias[grafoMapa.nos[i].id_no] = [];
-        }
-
-        for (var j = 0; j < grafoMapa.arestas.length; j++) {
-            var aresta = grafoMapa.arestas[j];
-
-            if (!adjacencias[aresta.id_no_origem] || !adjacencias[aresta.id_no_destino]) {
-                continue;
-            }
-
-            adjacencias[aresta.id_no_origem].push({
-                id_no: aresta.id_no_destino,
-                distancia: aresta.distancia_metros
-            });
-
-            adjacencias[aresta.id_no_destino].push({
-                id_no: aresta.id_no_origem,
-                distancia: aresta.distancia_metros
-            });
-        }
-
-        return adjacencias;
-    }
-
-    function calcularMenorCaminho(idOrigem, idDestino) {
-        var adjacencias = montarAdjacenciasGrafo();
-        var distancias = {};
-        var anteriores = {};
-        var visitados = {};
-        var ids = Object.keys(adjacencias);
-
-        for (var i = 0; i < ids.length; i++) {
-            distancias[ids[i]] = Infinity;
-            anteriores[ids[i]] = null;
-        }
-
-        if (!adjacencias[idOrigem] || !adjacencias[idDestino]) {
-            return null;
-        }
-
-        distancias[idOrigem] = 0;
-
-        while (true) {
-            var atual = null;
-            var menorDistancia = Infinity;
-
-            for (var j = 0; j < ids.length; j++) {
-                var id = ids[j];
-                if (!visitados[id] && distancias[id] < menorDistancia) {
-                    atual = id;
-                    menorDistancia = distancias[id];
-                }
-            }
-
-            if (atual === null || atual === idDestino) {
-                break;
-            }
-
-            visitados[atual] = true;
-
-            for (var k = 0; k < adjacencias[atual].length; k++) {
-                var vizinho = adjacencias[atual][k];
-                var novaDistancia = distancias[atual] + vizinho.distancia;
-
-                if (novaDistancia < distancias[vizinho.id_no]) {
-                    distancias[vizinho.id_no] = novaDistancia;
-                    anteriores[vizinho.id_no] = atual;
-                }
-            }
-        }
-
-        if (!Number.isFinite(distancias[idDestino])) {
-            return null;
-        }
-
-        var caminho = [];
-        var cursor = idDestino;
-
-        while (cursor !== null) {
-            caminho.unshift(cursor);
-            cursor = anteriores[cursor];
-        }
-
-        if (caminho[0] !== idOrigem) {
-            return null;
-        }
-
-        return {
-            caminho: caminho,
-            distancia: distancias[idDestino]
-        };
-    }
-
-    function desenharRotaAproximada(local) {
-        if (!mapaLeaflet || !posicaoUsuario || !local) {
-            return;
-        }
-
-        var origem = [posicaoUsuario.latitude, posicaoUsuario.longitude];
-        var destino = [local.latitude, local.longitude];
-
-        limparCamadaRota();
-
-        if (!grafoCarregado && grafoPromise) {
-            atualizarMapaStatus("Carregando caminhos do campus para calcular a rota...");
-            grafoPromise.finally(function () {
-                if (localSelecionado === local && posicaoUsuario) {
-                    desenharRotaAproximada(local);
-                }
-            });
-            return;
-        }
-
-        if (desenharRotaPeloGrafo(local, origem, destino)) {
-            return;
-        }
-
-        desenharRotaReta(local, origem, destino);
-    }
-
-    function desenharRotaPeloGrafo(local, origem, destino) {
-        if (!grafoCarregado || !grafoDisponivel) {
-            return false;
-        }
-
-        var noOrigem = buscarNoMaisProximo(origem[0], origem[1]);
-        var noDestino = buscarNoMaisProximo(destino[0], destino[1]);
-
-        if (!noOrigem || !noDestino) {
-            return false;
-        }
-
-        var rota = calcularMenorCaminho(noOrigem.id_no, noDestino.id_no);
-
-        if (!rota || rota.caminho.length === 0) {
-            return false;
-        }
-
-        var pontos = [origem];
-
-        for (var i = 0; i < rota.caminho.length; i++) {
-            var no = grafoMapa.nosPorId[rota.caminho[i]];
-            if (no) {
-                pontos.push([no.latitude, no.longitude]);
-            }
-        }
-
-        pontos.push(destino);
-
-        L.polyline(pontos, {
-            color: "#1d4ed8",
-            opacity: 0.95,
-            weight: 5
-        }).addTo(camadaRota || mapaLeaflet);
-
-        mapaLeaflet.fitBounds(L.latLngBounds(pontos).pad(0.25));
-
-        if (btnLimparRota) {
-            btnLimparRota.disabled = false;
-        }
-
-        var distanciaConectores =
-            distanciaMetros(origem[0], origem[1], noOrigem.latitude, noOrigem.longitude) +
-            distanciaMetros(noDestino.latitude, noDestino.longitude, destino[0], destino[1]);
-        var distanciaTotal = rota.distancia + distanciaConectores;
-
-        atualizarMapaStatus("Rota ate " + local.nome + ": " + formatarDistancia(distanciaTotal) + " por caminhos cadastrados do campus.");
-        return true;
-    }
-
-    function desenharRotaReta(local, origem, destino) {
-        L.polyline([origem, destino], {
-            color: "#1d4ed8",
-            dashArray: "8 8",
-            opacity: 0.9,
-            weight: 5
-        }).addTo(camadaRota || mapaLeaflet);
-
-        mapaLeaflet.fitBounds(L.latLngBounds([origem, destino]).pad(0.25));
-
-        if (btnLimparRota) {
-            btnLimparRota.disabled = false;
-        }
-
-        var distancia = distanciaMetros(posicaoUsuario.latitude, posicaoUsuario.longitude, local.latitude, local.longitude);
-        atualizarMapaStatus("Rota aproximada ate " + local.nome + ": " + formatarDistancia(distancia) + ". Caminho cadastrado indisponivel para este trecho.", "warning");
-    }
-
-    function limparCamadaRota() {
-        if (camadaRota) {
-            camadaRota.clearLayers();
-        }
-    }
-
-    function limparRota() {
-        limparCamadaRota();
-        localSelecionado = null;
-
-        if (btnLimparRota) {
-            btnLimparRota.disabled = true;
-        }
-
-        atualizarResultadosBusca();
-        atualizarMapaStatus("Rota removida. Pesquise ou selecione outro destino.");
-    }
-
-    function distanciaMetros(lat1, lon1, lat2, lon2) {
-        var raioTerra = 6371000;
-        var dLat = grausParaRadianos(lat2 - lat1);
-        var dLon = grausParaRadianos(lon2 - lon1);
-        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(grausParaRadianos(lat1)) * Math.cos(grausParaRadianos(lat2)) *
-            Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return raioTerra * c;
-    }
-
-    function grausParaRadianos(valor) {
-        return valor * Math.PI / 180;
-    }
-
-    function formatarDistancia(valor) {
-        if (valor >= 1000) {
-            return (valor / 1000).toFixed(1).replace(".", ",") + " km";
-        }
-
-        return Math.round(valor) + " m";
-    }
-
-    function atualizarMapaStatus(mensagem, tipo) {
-        if (!mapaStatus) {
-            return;
-        }
-
-        mapaStatus.textContent = mensagem || "";
-        mapaStatus.className = "ct-map-status small mt-2 mb-0";
-
-        if (tipo === "danger") {
-            mapaStatus.classList.add("text-danger");
-        } else if (tipo === "warning") {
-            mapaStatus.classList.add("text-warning");
-        } else {
-            mapaStatus.classList.add("text-secondary");
-        }
-    }
-
-    function atualizarLinksNavegacaoAluno(id) {
-        if (!linksNavegacaoAluno || linksNavegacaoAluno.length === 0) {
-            return;
-        }
-
-        var query = "?id=" + encodeURIComponent(id);
-
-        for (var i = 0; i < linksNavegacaoAluno.length; i++) {
-            var link = linksNavegacaoAluno[i];
-            var aba = link.getAttribute("data-tab");
-
-            if (aba === "mapa") {
-                link.href = "instituicao.html" + query;
             } else {
-                link.href = "../estudante/" + aba + ".html" + query;
+                alert(retorno.mensagem || "Erro ao atualizar favorito.");
             }
-        }
+            botao.disabled = false;
+        })
+        .catch(function () {
+            alert("Erro de conexao ao atualizar favorito.");
+            botao.disabled = false;
+        });
     }
 
     function verificarSessaoAluno() {
@@ -1259,6 +653,10 @@ document.addEventListener("DOMContentLoaded", function () {
             if (resposta.status !== "ok" || !Array.isArray(resposta.data) || resposta.data.length === 0) {
                 document.body.setAttribute("data-aluno-logado", "false");
                 exibirLogoutAluno(false);
+                // Carrega os locais sem favoritos
+                if (idInstituicao && /^\d+$/.test(idInstituicao)) {
+                    carregarLocais(idInstituicao);
+                }
                 return;
             }
 
@@ -1272,17 +670,25 @@ document.addEventListener("DOMContentLoaded", function () {
             desabilitarLinkAluno(linkCadastroAluno);
             desabilitarLinkAluno(linkLoginAluno);
             exibirLogoutAluno(true);
-            carregarFavoritos();
+
+            // Carrega favoritos e depois re-renderiza os locais com os botões corretos
+            if (idInstituicao && /^\d+$/.test(idInstituicao)) {
+                carregarFavoritosAluno(idInstituicao);
+            }
         })
         .catch(function () {
             document.body.setAttribute("data-aluno-logado", "false");
             exibirLogoutAluno(false);
+            if (idInstituicao && /^\d+$/.test(idInstituicao)) {
+                carregarLocais(idInstituicao);
+            }
         });
     }
 
     function exibirLogoutAluno(ativo) {
         alternarItemLogout(itemSeparadorLogoutAluno, ativo);
         alternarItemLogout(itemLogoutAluno, ativo);
+        alternarItemLogout(itemFavoritosAluno, ativo);
     }
 
     function alternarItemLogout(item, ativo) {

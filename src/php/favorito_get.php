@@ -3,45 +3,39 @@ include_once __DIR__ . "/valida_sessao_aluno.php";
 include_once __DIR__ . "/conexao.php";
 
 $retorno = [
-    "status" => "",
+    "status"   => "",
     "mensagem" => "",
-    "data" => [],
+    "data"     => [],
 ];
 
-$id_aluno = isset($_SESSION["aluno_id"]) ? (int) $_SESSION["aluno_id"] : 0;
+$id_aluno = (int) $_SESSION["aluno_id"];
 
-if ($id_aluno <= 0) {
-    $retorno = [
-        "status" => "not ok",
-        "mensagem" => "Aluno invalido.",
-        "data" => [],
-    ];
-} else {
-    $stmt = $conexao->prepare("
-        SELECT F.id_favorito, F.id_local, L.nome, L.tipo_escola, L.tipo, L.capacidade, L.longitude, L.latitude,
+// Retorna os locais favoritados pelo aluno com os dados do local e da instituição
+$sql = "SELECT F.id_favorito, L.id_local, L.id_instituicao, L.tipo_escola, L.tipo,
+            L.nome, L.capacidade, L.longitude, L.latitude,
             I.nome AS nome_instituicao
         FROM Favorito F
         INNER JOIN Locais L ON F.id_local = L.id_local
         LEFT JOIN Instituicao I ON L.id_instituicao = I.id_instituicao
         WHERE F.id_aluno = ?
-        ORDER BY F.id_favorito DESC
-    ");
-    $stmt->bind_param("i", $id_aluno);
-    $stmt->execute();
-    $resultado = $stmt->get_result();
+        ORDER BY L.nome";
 
-    $data = [];
-    while ($row = $resultado->fetch_assoc()) {
-        $data[] = $row;
-    }
-    $stmt->close();
+$stmt = $conexao->prepare($sql);
+$stmt->bind_param("i", $id_aluno);
+$stmt->execute();
+$resultado = $stmt->get_result();
 
-    $retorno = [
-        "status" => "ok",
-        "mensagem" => "Lista carregada.",
-        "data" => $data,
-    ];
+$data = [];
+while ($row = $resultado->fetch_assoc()) {
+    $data[] = $row;
 }
+$stmt->close();
+
+$retorno = [
+    "status"   => "ok",
+    "mensagem" => "Lista carregada.",
+    "data"     => $data,
+];
 
 $conexao->close();
 
