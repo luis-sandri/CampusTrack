@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CampusTrack - Mapa da instituicao</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
     :root {
       --bs-primary: #1e40af;
@@ -17,50 +18,307 @@
     }
     .ct-map-shell {
       min-height: calc(100vh - 73px);
-      padding: 1rem;
+      min-height: calc(100svh - 73px);
+      padding: 0;
     }
     .ct-map {
-      min-height: calc(100vh - 105px);
-      border: 1px solid var(--ct-border);
-      background:
-        linear-gradient(90deg, rgba(209, 213, 219, 0.6) 1px, transparent 1px),
-        linear-gradient(rgba(209, 213, 219, 0.6) 1px, transparent 1px),
-        radial-gradient(circle at 24% 28%, rgba(30, 64, 175, 0.12), transparent 14rem),
-        radial-gradient(circle at 72% 62%, rgba(22, 163, 74, 0.10), transparent 15rem),
-        #ffffff;
-      background-size: 56px 56px, 56px 56px, auto, auto, auto;
+      min-height: calc(100vh - 73px);
+      min-height: calc(100svh - 73px);
+      background-color: #e5e7eb;
       position: relative;
       overflow: hidden;
     }
     .ct-map-panel {
-      max-width: 24rem;
+      width: min(24rem, calc(100% - 2rem));
       position: absolute;
       left: 1rem;
       top: 1rem;
-      z-index: 2;
+      z-index: 900;
     }
-    .ct-map-pin {
-      width: 1rem;
-      height: 1rem;
+    .ct-map-panel .input-group {
+      flex-wrap: nowrap;
+    }
+    .ct-location-results {
+      max-height: 11.5rem;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding-right: 0.25rem;
+      scrollbar-color: #9ca3af transparent;
+      scrollbar-width: thin;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+    }
+    .ct-location-results::-webkit-scrollbar {
+      width: 0.45rem;
+    }
+    .ct-location-results::-webkit-scrollbar-thumb {
+      background-color: #9ca3af;
       border-radius: 999px;
-      background-color: #1e40af;
-      border: 3px solid #ffffff;
-      box-shadow: 0 0.25rem 0.75rem rgba(30, 64, 175, 0.35);
-      position: absolute;
+    }
+    .ct-location-results::-webkit-scrollbar-track {
+      background-color: transparent;
+    }
+    .ct-location-result {
+      border: 0;
+      border-top: 1px solid #e5e7eb;
+      background-color: transparent;
+      color: #212529;
+      display: block;
+      padding: 0.625rem 0;
+      text-align: left;
+      width: 100%;
+    }
+    .ct-location-result:first-child {
+      border-top: 0;
+    }
+    .ct-location-result:hover,
+    .ct-location-result:focus,
+    .ct-location-result.is-active {
+      color: #1e40af;
+      outline: 0;
+    }
+    .ct-map-status {
+      min-height: 1.25rem;
     }
     .ct-map-empty {
       min-height: inherit;
+      position: absolute;
+      inset: 0;
+      z-index: 450;
+      background-color: rgba(248, 249, 250, 0.92);
     }
-    @media (max-width: 575.98px) {
-      .ct-map-shell {
-        padding: 0.75rem;
+    .leaflet-container {
+      font-family: inherit;
+    }
+    .ct-btn-favorito {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.25rem;
+      line-height: 1;
+      padding: 0.1rem 0.25rem;
+      color: #9ca3af;
+      transition: color 0.2s, transform 0.2s;
+    }
+    .ct-btn-favorito:hover {
+      transform: scale(1.15);
+    }
+    .ct-btn-favorito.is-favorito {
+      color: #f59e0b;
+    }
+    .ct-user-location {
+      background-color: #16a34a;
+      border: 3px solid #ffffff;
+      border-radius: 999px;
+      box-shadow: 0 0.25rem 1rem rgba(22, 163, 74, 0.35);
+    }
+    .ct-desktop-nav {
+      display: flex;
+      gap: 0.25rem;
+      margin-left: 0.75rem;
+    }
+    .ct-desktop-nav a {
+      border-radius: 0.5rem;
+      color: #4b5563;
+      font-size: 0.92rem;
+      font-weight: 600;
+      padding: 0.45rem 0.7rem;
+      text-decoration: none;
+    }
+    .ct-desktop-nav a:hover,
+    .ct-desktop-nav a:focus {
+      color: #1e40af;
+    }
+    .ct-desktop-nav a.active {
+      background-color: rgba(30, 64, 175, 0.08);
+      color: #1e40af;
+    }
+    .ct-mobile-tabbar {
+      display: none;
+    }
+    @media (max-width: 767.98px) {
+      body {
+        padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));
       }
+      .navbar .container-fluid {
+        gap: 0.75rem;
+      }
+      .navbar-brand {
+        align-items: center;
+        display: flex;
+        font-size: 1rem;
+        min-width: 0;
+      }
+      .navbar-brand img {
+        height: 32px;
+        width: 32px;
+      }
+      #btn-menu-estudante {
+        max-width: 9.5rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .ct-desktop-nav {
+        display: none;
+      }
+      .ct-map-shell,
       .ct-map {
-        min-height: calc(100vh - 97px);
+        min-height: calc(100vh - 65px - 4.75rem);
+        min-height: calc(100svh - 65px - 4.75rem);
       }
       .ct-map-panel {
+        border-radius: 0.75rem !important;
         left: 0.75rem;
-        right: 0.75rem;
+        max-height: none;
+        overflow: visible;
+        padding: 0.6rem !important;
+        top: 0.75rem;
+        width: calc(100% - 1.5rem);
+      }
+      .ct-map-panel h1 {
+        font-size: 0.86rem;
+        line-height: 1.1;
+      }
+      .ct-map-panel > p.text-secondary {
+        display: none;
+      }
+      .ct-map-panel .input-group {
+        margin-top: 0.5rem !important;
+      }
+      .ct-map-panel .input-group .form-control,
+      .ct-map-panel .input-group .btn {
+        font-size: 0.78rem;
+        min-height: 2rem;
+      }
+      .ct-location-results {
+        display: none;
+        max-height: 8rem;
+        overflow-y: auto;
+        padding-right: 0;
+        scrollbar-width: none;
+      }
+      .ct-location-results::-webkit-scrollbar {
+        display: none;
+      }
+      .ct-map-panel.ct-search-open .ct-location-results {
+        display: block;
+      }
+      .ct-location-result {
+        padding: 0.55rem 0;
+      }
+      .ct-map-panel .d-grid {
+        margin-top: 0.45rem !important;
+      }
+      #btn-limpar-rota:disabled {
+        display: none;
+      }
+      .ct-map-status {
+        display: block;
+        font-size: 0.72rem;
+        min-height: auto;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .leaflet-control-zoom {
+        display: none;
+      }
+      .leaflet-control-attribution {
+        bottom: 0.35rem;
+        font-size: 0.58rem;
+        opacity: 0.7;
+        position: fixed;
+        right: 0.55rem;
+        z-index: 500;
+      }
+      .leaflet-popup-content {
+        margin: 0.75rem;
+        max-width: 14rem;
+      }
+      .ct-mobile-tabbar {
+        align-items: stretch;
+        background-color: #ffffff;
+        border-top: 1px solid #d1d5db;
+        bottom: 0;
+        box-shadow: 0 -0.35rem 1rem rgba(15, 23, 42, 0.08);
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        left: 0;
+        padding: 0.35rem 0.5rem calc(0.35rem + env(safe-area-inset-bottom));
+        position: fixed;
+        right: 0;
+        z-index: 950;
+      }
+      .ct-mobile-tabbar a {
+        align-items: center;
+        border-radius: 0.625rem;
+        color: #6b7280;
+        display: flex;
+        flex-direction: column;
+        font-size: 0.68rem;
+        font-weight: 600;
+        gap: 0.16rem;
+        justify-content: center;
+        min-height: 3.35rem;
+        text-decoration: none;
+      }
+      .ct-mobile-tabbar a::before {
+        background-color: currentColor;
+        content: "";
+        height: 1.1rem;
+        width: 1.1rem;
+      }
+      .ct-mobile-tabbar a[data-tab="mapa"]::before {
+        clip-path: polygon(50% 0, 90% 28%, 90% 82%, 50% 100%, 10% 82%, 10% 28%);
+      }
+      .ct-mobile-tabbar a[data-tab="eventos"]::before {
+        border-radius: 0.18rem;
+        clip-path: inset(0);
+      }
+      .ct-mobile-tabbar a[data-tab="favoritos"]::before {
+        clip-path: polygon(50% 4%, 61% 35%, 95% 35%, 68% 55%, 79% 90%, 50% 68%, 21% 90%, 32% 55%, 5% 35%, 39% 35%);
+      }
+      .ct-mobile-tabbar a[data-tab="perfil"]::before {
+        border-radius: 999px 999px 0.35rem 0.35rem;
+        clip-path: polygon(50% 0, 72% 18%, 72% 42%, 88% 58%, 88% 100%, 12% 100%, 12% 58%, 28% 42%, 28% 18%);
+      }
+      .ct-mobile-tabbar a.active {
+        background-color: rgba(30, 64, 175, 0.08);
+        color: #1e40af;
+      }
+    }
+    @media (max-width: 575.98px) {
+      .ct-location-results {
+        max-height: 7rem;
+      }
+    }
+    @media (max-width: 380px) {
+      .navbar .container-fluid {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+      }
+      .navbar-brand {
+        font-size: 0.95rem;
+      }
+      #btn-menu-estudante {
+        max-width: 7.5rem;
+      }
+      .ct-map-panel {
+        padding: 0.55rem !important;
+      }
+      .ct-map-panel .input-group {
+        display: flex;
+      }
+      .ct-map-panel .input-group > .form-control,
+      .ct-map-panel .input-group > .btn {
+        width: auto;
+      }
+      .ct-map-panel .input-group > .btn {
+        margin-top: 0;
+      }
+      .ct-map-panel .d-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -68,10 +326,18 @@
 <body class="min-vh-100 d-flex flex-column">
   <nav class="navbar navbar-expand-lg border-bottom bg-white">
     <div class="container-fluid px-3 px-sm-4 py-2">
-      <a class="navbar-brand fw-bold text-primary" href="../index.html">
-        <img src="../../../assets/logo-campustrack.png" alt="CampusTrack" width="40" height="40" class="d-inline-block align-text-top me-2">
-        CampusTrack
-      </a>
+      <div class="d-flex align-items-center">
+        <a class="navbar-brand fw-bold text-primary me-0" href="../index.html">
+          <img src="../../../assets/logo-campustrack.png" alt="CampusTrack" width="40" height="40" class="d-inline-block align-text-top me-2">
+          CampusTrack
+        </a>
+        <nav class="ct-desktop-nav" aria-label="Secoes do estudante">
+          <a class="active" data-tab="mapa" href="instituicao.html">Mapa</a>
+          <a data-tab="eventos" href="../estudante/eventos.html">Eventos</a>
+          <a data-tab="favoritos" href="../estudante/favoritos.html">Favoritos</a>
+          <a data-tab="perfil" href="../estudante/perfil.html">Perfil</a>
+        </nav>
+      </div>
       <div class="dropdown">
         <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="btn-menu-estudante" data-bs-toggle="dropdown" aria-expanded="false">
           Estudante
@@ -89,10 +355,19 @@
   </nav>
 
   <main class="ct-map-shell flex-grow-1">
-    <section id="mapa-locais" class="ct-map rounded-3" aria-labelledby="mapa-titulo">
+    <section id="mapa-locais" class="ct-map" aria-labelledby="mapa-titulo">
       <div class="ct-map-panel bg-white border rounded-3 p-3 shadow-sm">
         <h1 id="mapa-titulo" class="h5 fw-bold text-primary mb-1">Mapa da instituicao</h1>
         <p class="text-secondary small mb-0">Instituicao selecionada: <span id="id-instituicao" class="fw-semibold">-</span></p>
+        <div class="input-group input-group-sm mt-3">
+          <input id="busca-local" type="search" class="form-control" placeholder="Pesquisar bloco ou local" aria-label="Pesquisar bloco ou local">
+          <button id="btn-limpar-busca" type="button" class="btn btn-outline-secondary">Limpar</button>
+        </div>
+        <div id="resultado-locais" class="ct-location-results small mt-2"></div>
+        <div class="d-grid gap-2 mt-3">
+          <button id="btn-limpar-rota" type="button" class="btn btn-outline-secondary btn-sm" disabled>Limpar rota</button>
+        </div>
+        <p id="mapa-status" class="ct-map-status text-secondary small mt-2 mb-0"></p>
       </div>
 
       <div id="mapa-vazio" class="ct-map-empty d-flex align-items-center justify-content-center text-muted px-4 text-center">
@@ -101,7 +376,15 @@
     </section>
   </main>
 
+  <nav class="ct-mobile-tabbar" aria-label="Navegacao do estudante">
+    <a class="active" data-tab="mapa" href="instituicao.html">Mapa</a>
+    <a data-tab="eventos" href="../estudante/eventos.html">Eventos</a>
+    <a data-tab="favoritos" href="../estudante/favoritos.html">Favoritos</a>
+    <a data-tab="perfil" href="../estudante/perfil.html">Perfil</a>
+  </nav>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-  <script src="../../js/estudante_login.js" defer></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="../../js/estudante_login.js?v=mapa-grafo-campus-20260521" defer></script>
 </body>
 </html>

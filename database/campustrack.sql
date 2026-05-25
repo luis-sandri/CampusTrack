@@ -1,5 +1,5 @@
--- Modelo físico do banco de dados
-CREATE DATABASE campustrack;
+-- Modelo fisico do banco de dados
+CREATE DATABASE IF NOT EXISTS campustrack;
 USE campustrack;
 
 CREATE TABLE IF NOT EXISTS Usuario (
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS Usuario (
 
 CREATE TABLE IF NOT EXISTS Organizacao (
     id_organizacao INT          PRIMARY KEY AUTO_INCREMENT,
-    nome           VARCHAR(255) NOT NULL,    
+    nome           VARCHAR(255) NOT NULL,
     cnpj           VARCHAR(14)  NOT NULL,
     senha          VARCHAR(255) NOT NULL,
     UNIQUE KEY unique_organizacao_cnpj (cnpj)
@@ -77,28 +77,61 @@ CREATE TABLE IF NOT EXISTS Organizador (
 );
 
 CREATE TABLE IF NOT EXISTS Locais (
-    id_local       INT          PRIMARY KEY AUTO_INCREMENT,
-    id_instituicao INT          NOT NULL,
-    tipo_escola    VARCHAR(50)  NOT NULL,
-    nome           VARCHAR(255) NOT NULL,
-    capacidade     INT          NOT NULL,
-    tipo           VARCHAR(50)  NOT NULL,
-    longitude      VARCHAR(10)  NOT NULL,
-    latitude       VARCHAR(8)   NOT NULL,
+    id_local       INT            PRIMARY KEY AUTO_INCREMENT,
+    id_instituicao INT            NOT NULL,
+    tipo_escola    VARCHAR(50)    NOT NULL,
+    nome           VARCHAR(255)   NOT NULL,
+    capacidade     INT            NOT NULL,
+    tipo           VARCHAR(50)    NOT NULL,
+    longitude      DECIMAL(17,15) NOT NULL,
+    latitude       DECIMAL(17,15) NOT NULL,
     CONSTRAINT fk_locais_instituicao
         FOREIGN KEY (id_instituicao)
         REFERENCES Instituicao(id_instituicao)
         ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS Mapa_No (
+    id_no          INT            PRIMARY KEY AUTO_INCREMENT,
+    id_instituicao INT            NOT NULL,
+    nome           VARCHAR(100)   NOT NULL,
+    longitude      DECIMAL(17,15) NOT NULL,
+    latitude       DECIMAL(17,15) NOT NULL,
+    CONSTRAINT fk_mapa_no_instituicao
+        FOREIGN KEY (id_instituicao)
+        REFERENCES Instituicao(id_instituicao)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Mapa_Aresta (
+    id_aresta        INT          PRIMARY KEY AUTO_INCREMENT,
+    id_instituicao   INT          NOT NULL,
+    id_no_origem     INT          NOT NULL,
+    id_no_destino    INT          NOT NULL,
+    distancia_metros DECIMAL(8,2) NOT NULL,
+    CONSTRAINT fk_mapa_aresta_instituicao
+        FOREIGN KEY (id_instituicao)
+        REFERENCES Instituicao(id_instituicao)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_mapa_aresta_origem
+        FOREIGN KEY (id_no_origem)
+        REFERENCES Mapa_No(id_no)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_mapa_aresta_destino
+        FOREIGN KEY (id_no_destino)
+        REFERENCES Mapa_No(id_no)
+        ON DELETE CASCADE,
+    UNIQUE KEY unique_mapa_aresta (id_instituicao, id_no_origem, id_no_destino)
+);
+
 CREATE TABLE IF NOT EXISTS Evento (
     id_evento      INT PRIMARY KEY AUTO_INCREMENT,
-    nome VARCHAR(50) NOT NULL,
-    data DATETIME NOT NULL,
-    status VARCHAR(10) NOT NULL,
-    id_local       INT NOT NULL,
-    id_organizacao INT NOT NULL,
-    id_organizador INT NOT NULL,
+    nome           VARCHAR(50) NOT NULL,
+    data           DATETIME    NOT NULL,
+    status         VARCHAR(10) NOT NULL,
+    id_local       INT         NOT NULL,
+    id_organizacao INT         NOT NULL,
+    id_organizador INT         NOT NULL,
     CONSTRAINT fk_evento_local
         FOREIGN KEY (id_local)
         REFERENCES Locais(id_local)
@@ -193,11 +226,12 @@ ON DUPLICATE KEY UPDATE
     id_organizacao = VALUES(id_organizacao);
 
 INSERT INTO Locais (id_local, id_instituicao, tipo_escola, nome, capacidade, tipo, longitude, latitude) VALUES
-    (1, 1, 'Politecnica', 'Bloco 1', 120, 'Sala', '-49.2577', '-25.4420'),
-    (2, 1, 'Politecnica', 'Laboratorio de Informatica', 40, 'Laboratorio', '-49.2580', '-25.4425'),
-    (3, 1, 'Saude', 'Auditorio Central', 250, 'Auditorio', '-49.2584', '-25.4430'),
-    (4, 2, 'Tecnologia', 'Sala Maker', 30, 'Laboratorio', '-49.2600', '-25.4440'),
-    (5, 3, 'Humanas', 'Sala 101', 60, 'Sala', '-49.2610', '-25.4450')
+    (1, 1, 'Politecnica', 'Bloco 10', 120, 'Bloco', -49.249880109577190, -25.448778468099164),
+    (2, 1, 'Digital Arena', 'Digital Arena', 116, 'Auditorio', -49.251893347137590, -25.453128923965330),
+    (3, 1, 'Belas Artes', 'Bloco 5', 120, 'Bloco', -49.251388148925370, -25.449208632378372),
+    (4, 1, 'Politecnica', 'Bloco 1', 120, 'Bloco', -49.252468451503070, -25.450581456225787),
+    (5, 2, 'Tecnologia', 'Sala Maker', 30, 'Laboratorio', -49.260000000000000, -25.444000000000000),
+    (6, 3, 'Humanas', 'Sala 101', 60, 'Sala', -49.261000000000000, -25.445000000000000)
 ON DUPLICATE KEY UPDATE
     id_instituicao = VALUES(id_instituicao),
     tipo_escola = VALUES(tipo_escola),
@@ -206,6 +240,39 @@ ON DUPLICATE KEY UPDATE
     tipo = VALUES(tipo),
     longitude = VALUES(longitude),
     latitude = VALUES(latitude);
+
+INSERT INTO Mapa_No (id_no, id_instituicao, nome, longitude, latitude) VALUES
+    (1, 1, 'Entrada Bloco 10', -49.249880109577190, -25.448778468099164),
+    (2, 1, 'Caminho Bloco 10 / Bloco 5', -49.250450000000000, -25.449050000000000),
+    (3, 1, 'Entrada Bloco 5', -49.251388148925370, -25.449208632378372),
+    (4, 1, 'Entrada Bloco 1', -49.252468451503070, -25.450581456225787),
+    (5, 1, 'Conexao Central', -49.251850000000000, -25.450250000000000),
+    (6, 1, 'Caminho Digital Arena', -49.252250000000000, -25.451650000000000),
+    (7, 1, 'Entrada Digital Arena', -49.251893347137590, -25.453128923965330),
+    (8, 1, 'Caminho Bloco 5 / Centro', -49.251650000000000, -25.449720000000000),
+    (9, 1, 'Caminho Bloco 1 / Arena', -49.252620000000000, -25.451130000000000),
+    (10, 1, 'Acesso Norte Digital Arena', -49.252050000000000, -25.452350000000000)
+ON DUPLICATE KEY UPDATE
+    id_instituicao = VALUES(id_instituicao),
+    nome = VALUES(nome),
+    longitude = VALUES(longitude),
+    latitude = VALUES(latitude);
+
+INSERT INTO Mapa_Aresta (id_aresta, id_instituicao, id_no_origem, id_no_destino, distancia_metros) VALUES
+    (1, 1, 1, 2, 64.70),
+    (2, 1, 2, 3, 95.83),
+    (3, 1, 3, 8, 62.65),
+    (4, 1, 8, 5, 62.26),
+    (5, 1, 5, 4, 72.21),
+    (6, 1, 4, 9, 62.86),
+    (7, 1, 9, 6, 68.73),
+    (8, 1, 6, 10, 80.38),
+    (9, 1, 10, 7, 88.03)
+ON DUPLICATE KEY UPDATE
+    id_instituicao = VALUES(id_instituicao),
+    id_no_origem = VALUES(id_no_origem),
+    id_no_destino = VALUES(id_no_destino),
+    distancia_metros = VALUES(distancia_metros);
 
 INSERT INTO Evento (id_evento, nome, data, status, id_local, id_organizacao, id_organizador) VALUES
     (1, 'Feira de Carreiras', '2026-06-15 19:00:00', 'ativo', 1, 1, 1),
