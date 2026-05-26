@@ -9,55 +9,322 @@
     :root {
       --bs-primary: #1e40af;
       --bs-primary-rgb: 30, 64, 175;
+      --ct-border: #d1d5db;
+      --ct-muted: #6b7280;
+      --ct-soft: #eef2ff;
     }
     body {
       background-color: #f8f9fa;
       color: #212529;
-      padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));
     }
-    .ct-placeholder {
-      min-height: calc(100vh - 4.75rem);
-      min-height: calc(100svh - 4.75rem);
-    }
-    .ct-mobile-tabbar {
-      align-items: stretch;
-      background-color: #ffffff;
-      border-top: 1px solid #d1d5db;
-      bottom: 0;
-      box-shadow: 0 -0.35rem 1rem rgba(15, 23, 42, 0.08);
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      left: 0;
-      padding: 0.35rem 0.5rem calc(0.35rem + env(safe-area-inset-bottom));
-      position: fixed;
-      right: 0;
-      z-index: 950;
-    }
-    .ct-mobile-tabbar a {
-      align-items: center;
-      border-radius: 0.625rem;
-      color: #6b7280;
+    .ct-desktop-nav {
       display: flex;
-      flex-direction: column;
-      font-size: 0.68rem;
+      gap: 0.25rem;
+      margin-left: 0.75rem;
+    }
+    .ct-desktop-nav a {
+      border-radius: 0.5rem;
+      color: #4b5563;
+      font-size: 0.92rem;
       font-weight: 600;
-      justify-content: center;
-      min-height: 3.35rem;
+      padding: 0.45rem 0.7rem;
       text-decoration: none;
     }
-    .ct-mobile-tabbar a.active {
+    .ct-desktop-nav a:hover,
+    .ct-desktop-nav a:focus,
+    .ct-desktop-nav a.active {
       background-color: rgba(30, 64, 175, 0.08);
       color: #1e40af;
+    }
+    .ct-page {
+      min-height: calc(100vh - 73px);
+      min-height: calc(100svh - 73px);
+    }
+    .ct-profile-hero {
+      align-items: center;
+      display: flex;
+      gap: 1rem;
+    }
+    .ct-profile-avatar {
+      align-items: center;
+      background-color: var(--ct-soft);
+      border: 1px solid rgba(30, 64, 175, 0.16);
+      border-radius: 999px;
+      color: #1e40af;
+      display: inline-flex;
+      font-size: 1.35rem;
+      font-weight: 800;
+      height: 3.4rem;
+      justify-content: center;
+      width: 3.4rem;
+    }
+    .ct-card {
+      background-color: #fff;
+      border: 1px solid var(--ct-border);
+      border-radius: 0.5rem;
+      height: 100%;
+    }
+    .ct-card-title {
+      color: #111827;
+      font-size: 1rem;
+      font-weight: 800;
+      margin-bottom: 0.9rem;
+    }
+    .ct-info-row {
+      border-top: 1px solid #e5e7eb;
+      display: grid;
+      gap: 0.35rem;
+      grid-template-columns: minmax(7rem, 0.42fr) 1fr;
+      padding: 0.78rem 0;
+    }
+    .ct-info-row:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+    .ct-info-label {
+      color: var(--ct-muted);
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+    .ct-info-value {
+      color: #111827;
+      font-weight: 600;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .ct-action-list {
+      display: grid;
+      gap: 0.7rem;
+    }
+    .ct-action-item {
+      align-items: center;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      color: #111827;
+      display: flex;
+      justify-content: space-between;
+      min-height: 3.15rem;
+      padding: 0.7rem 0.85rem;
+      text-decoration: none;
+      width: 100%;
+    }
+    .ct-action-item:hover,
+    .ct-action-item:focus {
+      border-color: rgba(30, 64, 175, 0.35);
+      color: #1e40af;
+    }
+    .ct-action-item[aria-disabled="true"] {
+      background-color: #f9fafb;
+      color: #6b7280;
+      cursor: default;
+    }
+    .ct-action-item.ct-danger {
+      color: #b91c1c;
+    }
+    .ct-action-meta {
+      color: #6b7280;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-left: 1rem;
+      white-space: nowrap;
+    }
+    .ct-history-list {
+      display: grid;
+      gap: 0.75rem;
+    }
+    .ct-history-item {
+      border-left: 3px solid rgba(30, 64, 175, 0.35);
+      padding-left: 0.85rem;
+    }
+    .ct-history-item strong {
+      display: block;
+      font-size: 0.95rem;
+    }
+    .ct-history-item span {
+      color: var(--ct-muted);
+      display: block;
+      font-size: 0.86rem;
+      margin-top: 0.1rem;
+    }
+    .ct-mobile-tabbar {
+      display: none;
+    }
+    @media (max-width: 767.98px) {
+      body {
+        padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));
+      }
+      .navbar .container-fluid {
+        gap: 0.75rem;
+      }
+      .navbar-brand {
+        align-items: center;
+        display: flex;
+        font-size: 1rem;
+        min-width: 0;
+      }
+      .navbar-brand img {
+        height: 32px;
+        width: 32px;
+      }
+      .ct-desktop-nav {
+        display: none;
+      }
+      .ct-page {
+        min-height: calc(100vh - 65px - 4.75rem);
+        min-height: calc(100svh - 65px - 4.75rem);
+      }
+      .ct-profile-hero {
+        align-items: flex-start;
+      }
+      .ct-profile-avatar {
+        height: 3rem;
+        width: 3rem;
+      }
+      .ct-info-row {
+        grid-template-columns: 1fr;
+      }
+      .ct-mobile-tabbar {
+        align-items: stretch;
+        background-color: #ffffff;
+        border-top: 1px solid #d1d5db;
+        bottom: 0;
+        box-shadow: 0 -0.35rem 1rem rgba(15, 23, 42, 0.08);
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        left: 0;
+        padding: 0.35rem 0.5rem calc(0.35rem + env(safe-area-inset-bottom));
+        position: fixed;
+        right: 0;
+        z-index: 950;
+      }
+      .ct-mobile-tabbar a {
+        align-items: center;
+        border-radius: 0.625rem;
+        color: #6b7280;
+        display: flex;
+        flex-direction: column;
+        font-size: 0.68rem;
+        font-weight: 600;
+        gap: 0.16rem;
+        justify-content: center;
+        min-height: 3.35rem;
+        text-decoration: none;
+      }
+      .ct-mobile-tabbar a::before {
+        background-color: currentColor;
+        content: "";
+        height: 1.1rem;
+        width: 1.1rem;
+      }
+      .ct-mobile-tabbar a[data-tab="mapa"]::before {
+        clip-path: polygon(50% 0, 90% 28%, 90% 82%, 50% 100%, 10% 82%, 10% 28%);
+      }
+      .ct-mobile-tabbar a[data-tab="eventos"]::before {
+        border-radius: 0.18rem;
+        clip-path: inset(0);
+      }
+      .ct-mobile-tabbar a[data-tab="favoritos"]::before {
+        clip-path: polygon(50% 4%, 61% 35%, 95% 35%, 68% 55%, 79% 90%, 50% 68%, 21% 90%, 32% 55%, 5% 35%, 39% 35%);
+      }
+      .ct-mobile-tabbar a[data-tab="perfil"]::before {
+        border-radius: 999px 999px 0.35rem 0.35rem;
+        clip-path: polygon(50% 0, 72% 18%, 72% 42%, 88% 58%, 88% 100%, 12% 100%, 12% 58%, 28% 42%, 28% 18%);
+      }
+      .ct-mobile-tabbar a.active {
+        background-color: rgba(30, 64, 175, 0.08);
+        color: #1e40af;
+      }
     }
   </style>
 </head>
 <body>
-  <main class="ct-placeholder container d-flex align-items-center justify-content-center py-5 text-center">
-    <section class="bg-white border rounded-3 p-4 shadow-sm">
-      <img src="../../../assets/logo-campustrack.png" alt="CampusTrack" width="48" height="48" class="mb-3">
-      <h1 class="h4 fw-bold text-primary">Perfil</h1>
-      <p class="text-secondary mb-0">Esta secao esta em producao. Em breve voce podera gerenciar seus dados de estudante aqui.</p>
-    </section>
+  <nav class="navbar navbar-expand-lg border-bottom bg-white">
+    <div class="container-fluid px-3 px-sm-4 py-2">
+      <div class="d-flex align-items-center">
+        <a class="navbar-brand fw-bold text-primary me-0" href="../index.html">
+          <img src="../../../assets/logo-campustrack.png" alt="CampusTrack" width="40" height="40" class="d-inline-block align-text-top me-2">
+          CampusTrack
+        </a>
+        <nav class="ct-desktop-nav" aria-label="Secoes do estudante">
+          <a data-tab="mapa" href="../visitante/instituicao.html">Mapa</a>
+          <a data-tab="eventos" href="eventos.html">Eventos</a>
+          <a data-tab="favoritos" href="favoritos.html">Favoritos</a>
+          <a class="active" data-tab="perfil" href="perfil.html">Perfil</a>
+        </nav>
+      </div>
+    </div>
+  </nav>
+
+  <main class="ct-page container py-4 py-md-5">
+    <header class="ct-profile-hero mb-4">
+      <div id="perfil-avatar" class="ct-profile-avatar" aria-hidden="true">CT</div>
+      <div>
+        <p class="text-secondary small fw-semibold mb-1">Perfil do estudante</p>
+        <h1 class="h3 fw-bold text-primary mb-1">Minha conta</h1>
+        <p class="text-secondary mb-0">Acompanhe seus dados principais, acesso e atividade recente no CampusTrack.</p>
+      </div>
+    </header>
+
+    <div class="row g-3">
+      <section class="col-lg-7" aria-labelledby="dados-conta-titulo">
+        <article class="ct-card p-3 p-md-4 shadow-sm">
+          <h2 id="dados-conta-titulo" class="ct-card-title">Dados da conta</h2>
+          <div class="ct-info-row">
+            <span class="ct-info-label">Nome</span>
+            <span id="perfil-nome" class="ct-info-value">Estudante</span>
+          </div>
+          <div class="ct-info-row">
+            <span class="ct-info-label">E-mail</span>
+            <span id="perfil-email" class="ct-info-value">Entre como estudante para carregar seu e-mail</span>
+          </div>
+          <div class="ct-info-row">
+            <span class="ct-info-label">Tipo de acesso</span>
+            <span id="perfil-tipo" class="ct-info-value">Estudante</span>
+          </div>
+          <div class="ct-info-row">
+            <span class="ct-info-label">Instituicao</span>
+            <span id="perfil-instituicao" class="ct-info-value">Instituicao selecionada no mapa</span>
+          </div>
+        </article>
+      </section>
+
+      <section class="col-lg-5" aria-labelledby="conta-titulo">
+        <article class="ct-card p-3 p-md-4 shadow-sm">
+          <h2 id="conta-titulo" class="ct-card-title">Conta</h2>
+          <div class="ct-action-list">
+
+            <a class="ct-action-item" href="recuperar_senha.html">
+              <span>Alterar senha</span>
+              <span class="ct-action-meta">Abrir</span>
+            </a>
+            <button id="btn-sair" type="button" class="ct-action-item ct-danger text-start">
+              <span>Sair da conta</span>
+              <span class="ct-action-meta">Encerrar</span>
+            </button>
+          </div>
+        </article>
+      </section>
+
+      <section class="col-12" aria-labelledby="historico-titulo">
+        <article class="ct-card p-3 p-md-4 shadow-sm">
+          <h2 id="historico-titulo" class="ct-card-title">Historico rapido</h2>
+          <div class="ct-history-list">
+            <div class="ct-history-item">
+              <strong>Status da sessao</strong>
+              <span id="perfil-sessao">Aguardando validacao da conta neste navegador.</span>
+            </div>
+            <div class="ct-history-item">
+              <strong>Locais favoritos</strong>
+              <span><a id="link-historico-favoritos" href="favoritos.html">Ver locais salvos</a> no mapa da instituicao.</span>
+            </div>
+            <div class="ct-history-item">
+              <strong>Eventos ativos</strong>
+              <span><a id="link-historico-eventos" href="eventos.html">Acompanhar eventos</a> disponiveis para a instituicao.</span>
+            </div>
+          </div>
+        </article>
+      </section>
+    </div>
   </main>
 
   <nav class="ct-mobile-tabbar" aria-label="Navegacao do estudante">
@@ -67,6 +334,65 @@
     <a class="active" data-tab="perfil" href="perfil.html">Perfil</a>
   </nav>
 
-  <script src="../../js/estudante_nav.js" defer></script>
+  <script src="../../js/estudante_nav.js?v=perfil-favoritos-20260525" defer></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var params = new URLSearchParams(window.location.search);
+      var idInstituicao = params.get("id") || params.get("id_instituicao");
+
+      if (idInstituicao && /^\d+$/.test(idInstituicao)) {
+        var links = document.querySelectorAll(".ct-desktop-nav a, .ct-mobile-tabbar a, #link-historico-favoritos, #link-historico-eventos");
+        for (var i = 0; i < links.length; i++) {
+          var link = links[i];
+          var aba = link.getAttribute("data-tab");
+          var query = "?id=" + encodeURIComponent(idInstituicao);
+
+          if (aba === "mapa") {
+            link.href = "../visitante/instituicao.html" + query;
+          } else if (aba) {
+            link.href = aba + ".html" + query;
+          } else if (link.id === "link-historico-favoritos") {
+            link.href = "favoritos.html" + query;
+          } else if (link.id === "link-historico-eventos") {
+            link.href = "eventos.html" + query;
+          }
+        }
+      }
+
+      fetch("../../php/sessao_status.php?perfil=aluno")
+        .then(function (response) { return response.json(); })
+        .then(function (resposta) {
+          if (resposta.status !== "ok" || !Array.isArray(resposta.data) || resposta.data.length === 0) {
+            return;
+          }
+
+          var aluno = resposta.data[0];
+          var nome = aluno.nome || "Estudante";
+          var email = aluno.email || "E-mail nao informado";
+          var instituicao = aluno.id_instituicao ? "Instituicao #" + aluno.id_instituicao : "Instituicao selecionada no mapa";
+          var iniciais = nome.split(" ").filter(Boolean).slice(0, 2).map(function (parte) {
+            return parte.charAt(0).toUpperCase();
+          }).join("") || "CT";
+
+          document.getElementById("perfil-nome").textContent = nome;
+          document.getElementById("perfil-email").textContent = email;
+          document.getElementById("perfil-tipo").textContent = aluno.perfil || "Estudante";
+          document.getElementById("perfil-instituicao").textContent = instituicao;
+          document.getElementById("perfil-avatar").textContent = iniciais;
+          document.getElementById("perfil-sessao").textContent = "Conta ativa neste navegador.";
+        })
+        .catch(function () {});
+
+      var btnSair = document.getElementById("btn-sair");
+      if (btnSair) {
+        btnSair.addEventListener("click", function () {
+          fetch("../../php/logout.php")
+            .finally(function () {
+              window.location.href = "login.html" + (idInstituicao ? "?id_instituicao=" + encodeURIComponent(idInstituicao) + "&modo=login" : "");
+            });
+        });
+      }
+    });
+  </script>
 </body>
 </html>

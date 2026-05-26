@@ -20,7 +20,7 @@ async function carregarFavoritos() {
         var resp = await fetch("../../php/favorito_get.php");
         retorno = await resp.json();
     } catch (e) {
-        lista.innerHTML = "<p class=\"text-danger\">Erro de conexão ao carregar favoritos.</p>";
+        lista.innerHTML = "<p class=\"text-danger\">Erro de conexao ao carregar favoritos.</p>";
         return;
     }
 
@@ -33,10 +33,10 @@ async function carregarFavoritos() {
 
     if (!Array.isArray(registros) || registros.length === 0) {
         lista.innerHTML =
-            "<div class=\"text-center py-5\">" +
-                "<div class=\"display-1 mb-3\" aria-hidden=\"true\">☆</div>" +
-                "<p class=\"lead text-muted\">Você ainda não tem nenhum local favoritado.</p>" +
-                "<p class=\"text-muted small\">Acesse o mapa da sua instituição e clique em ☆ para favoritar um local.</p>" +
+            "<div class=\"bg-white border rounded-3 p-4 p-md-5 text-center shadow-sm\">" +
+                "<div class=\"ct-favorite-star display-5 mb-3\" aria-hidden=\"true\">&#9734;</div>" +
+                "<p class=\"lead text-muted mb-1\">Voce ainda nao tem nenhum local favoritado.</p>" +
+                "<p class=\"text-muted small mb-0\">Acesse o mapa da sua instituicao e clique na estrela para salvar um local.</p>" +
             "</div>";
         return;
     }
@@ -47,22 +47,25 @@ async function carregarFavoritos() {
         var local = registros[i];
         html +=
             "<div class=\"col-md-6 col-lg-4\">" +
-                "<div class=\"card h-100 shadow-sm\">" +
+                "<div class=\"card ct-favorite-card h-100 shadow-sm\">" +
                     "<div class=\"card-body\">" +
-                        "<div class=\"d-flex justify-content-between align-items-start mb-2\">" +
-                            "<h2 class=\"h6 fw-bold mb-0 text-primary\">" + textoSeguro(local.nome) + "</h2>" +
+                        "<div class=\"d-flex justify-content-between align-items-start gap-3 mb-2\">" +
+                            "<div class=\"d-flex align-items-start gap-2\">" +
+                                "<span class=\"ct-favorite-star\" aria-hidden=\"true\">&#9733;</span>" +
+                                "<h2 class=\"h6 fw-bold mb-0 text-primary\">" + textoSeguro(local.nome) + "</h2>" +
+                            "</div>" +
                             "<button " +
                                 "class=\"btn btn-sm btn-outline-danger ct-btn-remover-favorito\" " +
                                 "data-id-local=\"" + textoSeguro(local.id_local) + "\" " +
                                 "title=\"Remover dos favoritos\" " +
                                 "aria-label=\"Remover " + textoSeguro(local.nome) + " dos favoritos\"" +
-                            ">★ Remover</button>" +
+                            ">Remover</button>" +
                         "</div>" +
                         "<p class=\"small text-muted mb-1\">" +
-                            "<span class=\"fw-medium\">Instituição:</span> " + textoSeguro(local.nome_instituicao) +
+                            "<span class=\"fw-medium\">Instituicao:</span> " + textoSeguro(local.nome_instituicao) +
                         "</p>" +
                         "<p class=\"small text-muted mb-1\">" +
-                            "<span class=\"fw-medium\">Escola:</span> " + textoSeguro(local.tipo_escola) + " — " + textoSeguro(local.tipo) +
+                            "<span class=\"fw-medium\">Escola:</span> " + textoSeguro(local.tipo_escola) + " - " + textoSeguro(local.tipo) +
                         "</p>" +
                         "<p class=\"small text-muted mb-0\">" +
                             "<span class=\"fw-medium\">Capacidade:</span> " + textoSeguro(local.capacidade) + " pessoas" +
@@ -75,7 +78,6 @@ async function carregarFavoritos() {
     html += "</div>";
     lista.innerHTML = html;
 
-    // Vincula eventos de remoção após render
     var botoes = lista.querySelectorAll(".ct-btn-remover-favorito");
     for (var j = 0; j < botoes.length; j++) {
         botoes[j].addEventListener("click", aoClicarRemover);
@@ -83,7 +85,7 @@ async function carregarFavoritos() {
 }
 
 async function aoClicarRemover(event) {
-    var botao   = event.currentTarget;
+    var botao = event.currentTarget;
     var idLocal = botao.getAttribute("data-id-local");
 
     var confirmado = typeof confirmarAcao === "function"
@@ -104,13 +106,13 @@ async function aoClicarRemover(event) {
     try {
         var resp = await fetch("../../php/favorito_remover.php", {
             method: "POST",
-            body:   formData,
+            body: formData,
         });
         retorno = await resp.json();
     } catch (e) {
-        alert("Erro de conexão ao remover favorito.");
+        alert("Erro de conexao ao remover favorito.");
         botao.disabled = false;
-        botao.textContent = "★ Remover";
+        botao.textContent = "Remover";
         return;
     }
 
@@ -120,6 +122,6 @@ async function aoClicarRemover(event) {
     } else {
         alert("Erro: " + retorno.mensagem);
         botao.disabled = false;
-        botao.textContent = "★ Remover";
+        botao.textContent = "Remover";
     }
 }
