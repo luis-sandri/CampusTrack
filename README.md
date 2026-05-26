@@ -1,6 +1,6 @@
 # CampusTrack
 
-CampusTrack é um sistema web para gerenciamento de instituições, gerentes de locais e espaços físicos de campus. O projeto foi desenvolvido com páginas HTML, scripts JavaScript e endpoints PHP, usando MySQL como banco de dados.
+CampusTrack é um sistema web para gerenciamento de instituições, gerentes de locais e espaços físicos de campus. O projeto foi desenvolvido com páginas HTML, scripts JavaScript e endpoints PHP, usando MySQL como banco de dados. Inclui visualização interativa de mapas do campus e gerenciamento de eventos e favoritos. 
 
 ## Funcionalidades
 
