@@ -4,18 +4,8 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 document.getElementById("evento-id_instituicao").addEventListener("change", function () {
-    checarFiltrosLocais();
+    carregarLocais(this.value);
 });
-
-document.getElementById("evento-data").addEventListener("change", function () {
-    checarFiltrosLocais();
-});
-
-function checarFiltrosLocais() {
-    var id = document.getElementById("evento-id_instituicao").value;
-    var data = document.getElementById("evento-data").value;
-    carregarLocais(id, data);
-}
 
 document.getElementById("form-evento").addEventListener("submit", function (event) {
     event.preventDefault();
@@ -52,18 +42,17 @@ async function carregarInstituicoes() {
     }
 }
 
-async function carregarLocais(id_instituicao, data_escolhida) {
+async function carregarLocais(id_instituicao) {
     var selectLocal = document.getElementById("evento-id_local");
     selectLocal.innerHTML = '<option value="">Selecione</option>';
     selectLocal.disabled = true;
 
-    if (id_instituicao === "" || data_escolhida === "") {
-        selectLocal.innerHTML = '<option value="">Selecione instituicao e data</option>';
+    if (id_instituicao === "") {
+        selectLocal.innerHTML = '<option value="">Selecione uma instituicao</option>';
         return;
     }
 
-    const url = "../../php/local_disponivel_evento_get.php?id_instituicao=" + encodeURIComponent(id_instituicao) + "&data=" + encodeURIComponent(data_escolhida);
-    const retorno = await fetch(url);
+    const retorno = await fetch("../../php/local_get.php?id_instituicao=" + encodeURIComponent(id_instituicao));
     const resposta = await retorno.json();
 
     if (resposta.status == "ok") {
@@ -119,9 +108,7 @@ async function adicionar_evento() {
 
     if (resposta.status == "ok") {
         alert("Sucesso! " + resposta.mensagem);
-        setTimeout(() => {
-            window.location.href = "organizador_dashboard.html";
-        }, 300);
+        window.location.href = "organizador_dashboard.html";
     } else {
         alert(resposta.mensagem);
     }
