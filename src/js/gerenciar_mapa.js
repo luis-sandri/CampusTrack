@@ -6,6 +6,7 @@ var instituicaoAtual = "";
 var grafoAtual = { nos: [], arestas: [] };
 var nosPorId = {};
 var selecaoAresta = [];
+var noSelecionadoId = "";
 
 document.addEventListener("DOMContentLoaded", function () {
     valida_sessao();
@@ -49,6 +50,7 @@ function configurarEventos() {
 
     document.getElementById("btn-novo-no").addEventListener("click", function () {
         limparFormularioNo();
+        desenharGrafo();
     });
 
     document.getElementById("btn-excluir-no").addEventListener("click", function () {
@@ -102,7 +104,7 @@ async function carregarMapaInstituicao() {
         carregarGrafo()
     ]);
 
-    atualizarStatus("Clique no mapa para criar pontos. Clique em dois pontos para conectar.");
+    atualizarStatus("Clique no mapa para criar pontos. Selecione um ponto para arrastar e clique em Salvar no para gravar.");
 }
 
 async function carregarLocais() {
@@ -167,14 +169,18 @@ function prepararGrafo(dados) {
 
 function desenharGrafo() {
     camadaNos.clearLayers();
+    desenharArestasGrafo();
+
+    for (var j = 0; j < grafoAtual.nos.length; j++) {
+        desenharNo(grafoAtual.nos[j]);
+    }
+}
+
+function desenharArestasGrafo() {
     camadaArestas.clearLayers();
 
     for (var i = 0; i < grafoAtual.arestas.length; i++) {
         desenharAresta(grafoAtual.arestas[i]);
-    }
-
-    for (var j = 0; j < grafoAtual.nos.length; j++) {
-        desenharNo(grafoAtual.nos[j]);
     }
 }
 
@@ -187,18 +193,25 @@ function desenharNo(no) {
         return;
     }
 
-    var selecionado = selecaoAresta.indexOf(id) >= 0;
-    var marcador = L.circleMarker([latitude, longitude], {
-        radius: selecionado ? 9 : 7,
-        color: "#ffffff",
-        fillColor: selecionado ? "#f59e0b" : "#1d4ed8",
-        fillOpacity: 1,
-        weight: 3
+    var selecionadoParaAresta = selecaoAresta.indexOf(id) >= 0;
+    var selecionadoParaEdicao = noSelecionadoId === id;
+    var selecionado = selecionadoParaAresta || selecionadoParaEdicao;
+    var tamanho = selecionado ? 20 : 16;
+    var marcador = L.marker([latitude, longitude], {
+        draggable: selecionadoParaEdicao,
+        autoPan: true,
+        icon: L.divIcon({
+            className: "ct-map-node" + (selecionado ? " ct-node-selected" : ""),
+            iconSize: [tamanho, tamanho],
+            iconAnchor: [tamanho / 2, tamanho / 2],
+            popupAnchor: [0, -tamanho / 2]
+        })
     });
 
     marcador.bindPopup(
         "<strong>" + textoSeguro(no.nome) + "</strong><br>" +
-        "<span class='small'>No #" + textoSeguro(id) + "</span>"
+        "<span class='small'>No #" + textoSeguro(id) + "</span>" +
+        (selecionadoParaEdicao ? "<br><span class='small text-muted'>Arraste para ajustar e salve.</span>" : "")
     );
 
     marcador.on("click", function (event) {
@@ -206,7 +219,35 @@ function desenharNo(no) {
         selecionarNo(no);
     });
 
+    marcador.on("drag", function (event) {
+        atualizarPosicaoNo(no, event.target.getLatLng(), true);
+    });
+
+    marcador.on("dragend", function (event) {
+        atualizarPosicaoNo(no, event.target.getLatLng(), true);
+        atualizarStatus("Ponto ajustado. Clique em Salvar no para gravar a nova posicao.");
+    });
+
     marcador.addTo(camadaNos);
+}
+
+function atualizarPosicaoNo(no, latlng, atualizarLinhas) {
+    var id = String(no.id_no);
+    var latitude = latlng.lat.toFixed(15);
+    var longitude = latlng.lng.toFixed(15);
+
+    no.latitude = latitude;
+    no.longitude = longitude;
+    nosPorId[id] = no;
+
+    if (document.getElementById("no-id").value.trim() === id) {
+        document.getElementById("no-latitude").value = latitude;
+        document.getElementById("no-longitude").value = longitude;
+    }
+
+    if (atualizarLinhas) {
+        desenharArestasGrafo();
+    }
 }
 
 function desenharAresta(aresta) {
@@ -243,9 +284,10 @@ function desenharAresta(aresta) {
 }
 
 function selecionarNo(no) {
+    var id = String(no.id_no);
+    noSelecionadoId = id;
     preencherFormularioNo(no);
 
-    var id = String(no.id_no);
     var indice = selecaoAresta.indexOf(id);
 
     if (indice >= 0) {
@@ -258,18 +300,23 @@ function selecionarNo(no) {
     }
 
     atualizarCamposAresta();
+    atualizarStatus("Ponto selecionado. Arraste o marcador amarelo e clique em Salvar no para gravar.");
     desenharGrafo();
 }
 
 function prepararNovoNo(latitude, longitude) {
+    noSelecionadoId = "";
     document.getElementById("no-id").value = "";
     document.getElementById("no-nome").value = "Novo ponto";
     document.getElementById("no-latitude").value = latitude.toFixed(15);
     document.getElementById("no-longitude").value = longitude.toFixed(15);
     document.getElementById("btn-excluir-no").disabled = true;
+    atualizarStatus("Novo ponto preparado. Ajuste os dados e clique em Salvar no para cadastrar.");
+    desenharGrafo();
 }
 
 function preencherFormularioNo(no) {
+    noSelecionadoId = String(no.id_no);
     document.getElementById("no-id").value = no.id_no;
     document.getElementById("no-nome").value = no.nome;
     document.getElementById("no-latitude").value = no.latitude;
@@ -278,6 +325,7 @@ function preencherFormularioNo(no) {
 }
 
 function limparFormularioNo() {
+    noSelecionadoId = "";
     document.getElementById("no-id").value = "";
     document.getElementById("no-nome").value = "";
     document.getElementById("no-latitude").value = "";
