@@ -94,6 +94,14 @@ async function adicionar_evento() {
         return;
     }
 
+    const dataSelecionada = new Date(data);
+    const dataAtual = new Date();
+
+    if (dataSelecionada <= dataAtual) {
+        window.__alertaOriginal("A data e horário do evento devem ser no futuro.");
+        return;
+    }
+
     const novo_evento = new FormData();
     novo_evento.append("nome", nome);
     novo_evento.append("id_instituicao", id_instituicao);
@@ -107,9 +115,9 @@ async function adicionar_evento() {
     const resposta = await retorno.json();
 
     if (resposta.status == "ok") {
-        alert("Sucesso! " + resposta.mensagem);
+        window.__alertaOriginal("Sucesso! " + resposta.mensagem);
         window.location.href = "organizador_dashboard.html";
     } else {
-        alert(resposta.mensagem);
+        window.__alertaOriginal(resposta.mensagem);
     }
 }

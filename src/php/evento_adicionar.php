@@ -36,12 +36,22 @@ if (!evento_campos_obrigatorios_preenchidos($dados)) {
             "data" => [],
         ];
     } else {
-        $stmt_local = $conexao->prepare("SELECT id_local FROM Locais WHERE id_local = ? AND id_instituicao = ?");
-        $stmt_local->bind_param("ii", $id_local, $id_instituicao);
-        $stmt_local->execute();
-        $resultado_local = $stmt_local->get_result();
-        $local_existe = $resultado_local->num_rows === 1;
-        $stmt_local->close();
+        $data_timestamp = strtotime($data_evento);
+        $data_atual_timestamp = time();
+
+        if ($data_timestamp <= $data_atual_timestamp) {
+            $retorno = [
+                "status" => "not ok",
+                "mensagem" => "A data e horário do evento devem ser no futuro.",
+                "data" => [],
+            ];
+        } else {
+            $stmt_local = $conexao->prepare("SELECT id_local FROM Locais WHERE id_local = ? AND id_instituicao = ?");
+            $stmt_local->bind_param("ii", $id_local, $id_instituicao);
+            $stmt_local->execute();
+            $resultado_local = $stmt_local->get_result();
+            $local_existe = $resultado_local->num_rows === 1;
+            $stmt_local->close();
 
         if (!$local_existe) {
             $retorno = [
@@ -51,7 +61,7 @@ if (!evento_campos_obrigatorios_preenchidos($dados)) {
             ];
         } else {
             $stmt_conflito = $conexao->prepare(
-                "SELECT id_evento FROM Evento WHERE id_local = ? AND data = ? AND status = 'ativo' LIMIT 1"
+                "SELECT id_evento FROM Evento WHERE id_local = ? AND status = 'ativo' AND ABS(TIMESTAMPDIFF(MINUTE, data, ?)) < 120 LIMIT 1"
             );
             $stmt_conflito->bind_param("is", $id_local, $data_evento);
             $stmt_conflito->execute();
@@ -76,7 +86,7 @@ if (!evento_campos_obrigatorios_preenchidos($dados)) {
                 if ($stmt->affected_rows > 0) {
                     $retorno = [
                         "status" => "ok",
-                        "mensagem" => "Evento cadastrado com sucesso.",
+                        "mensagem" => "evento solicitado com sucesso",
                         "data" => [["id_evento" => (int) $conexao->insert_id]],
                     ];
                 } else {
@@ -89,6 +99,7 @@ if (!evento_campos_obrigatorios_preenchidos($dados)) {
 
                 $stmt->close();
             }
+        }
         }
     }
 }
