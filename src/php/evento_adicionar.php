@@ -51,7 +51,7 @@ if (!evento_campos_obrigatorios_preenchidos($dados)) {
             ];
         } else {
             $stmt_conflito = $conexao->prepare(
-                "SELECT id_evento FROM Evento WHERE id_local = ? AND data = ? AND status = 'ativo' LIMIT 1"
+                "SELECT id_evento FROM Evento WHERE id_local = ? AND DATE(data) = DATE(?) AND status = 'ativo' LIMIT 1"
             );
             $stmt_conflito->bind_param("is", $id_local, $data_evento);
             $stmt_conflito->execute();
