@@ -190,7 +190,7 @@
         bottom: 0;
         box-shadow: 0 -0.35rem 1rem rgba(15, 23, 42, 0.08);
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(5, 1fr);
         left: 0;
         padding: 0.35rem 0.5rem calc(0.35rem + env(safe-area-inset-bottom));
         position: fixed;
@@ -222,6 +222,9 @@
       .ct-mobile-tabbar a[data-tab="eventos"]::before {
         border-radius: 0.18rem;
         clip-path: inset(0);
+      }
+      .ct-mobile-tabbar a[data-tab="feedbacks"]::before {
+        clip-path: polygon(10% 0, 90% 0, 100% 10%, 100% 70%, 90% 80%, 60% 80%, 40% 100%, 40% 80%, 10% 80%, 0 70%, 0 10%);
       }
       .ct-mobile-tabbar a[data-tab="favoritos"]::before {
         clip-path: polygon(50% 4%, 61% 35%, 95% 35%, 68% 55%, 79% 90%, 50% 68%, 21% 90%, 32% 55%, 5% 35%, 39% 35%);
@@ -330,6 +333,7 @@
   <nav class="ct-mobile-tabbar" aria-label="Navegacao do estudante">
     <a data-tab="mapa" href="../visitante/instituicao.html">Mapa</a>
     <a data-tab="eventos" href="eventos.html">Eventos</a>
+    <a data-tab="feedbacks" href="feedbacks.html">Avaliar</a>
     <a data-tab="favoritos" href="favoritos.html">Favoritos</a>
     <a class="active" data-tab="perfil" href="perfil.html">Perfil</a>
   </nav>
