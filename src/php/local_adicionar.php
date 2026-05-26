@@ -18,6 +18,7 @@ $longitude = isset($_POST["longitude"]) ? trim((string) $_POST["longitude"]) : "
 $latitude = isset($_POST["latitude"]) ? trim((string) $_POST["latitude"]) : "";
 $id_instituicao_gerente = (int) $_SESSION["gerente_id_instituicao"];
 
+
 if ($id_instituicao <= 0 || $tipo_escola === "" || $tipo === "" || $nome === "" || $capacidade_raw === "" || !ctype_digit($capacidade_raw) || $longitude === "" || $latitude === "") {
     $retorno = [
         "status" => "not ok",

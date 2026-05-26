@@ -68,7 +68,7 @@ if (!evento_campos_obrigatorios_preenchidos($dados)) {
             } else {
                 $stmt = $conexao->prepare(
                     "INSERT INTO Evento (nome, data, status, id_local, id_organizacao, id_organizador)
-                     VALUES (?, ?, 'ativo', ?, ?, ?)"
+                     VALUES (?, ?, 'pendente', ?, ?, ?)"
                 );
                 $stmt->bind_param("ssiii", $dados["nome"], $data_evento, $id_local, $id_organizacao, $id_organizador);
                 $stmt->execute();
