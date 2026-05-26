@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var inputNome = document.getElementById("organizacao-nome");
     var inputCnpj = document.getElementById("organizacao-cnpj");
     var inputSenha = document.getElementById("organizacao-senha");
+    var inputConfirmarSenha = document.getElementById("organizacao-confirmar-senha");
 
     function mascaraCnpj(valor) {
         valor = valor.replace(/\D/g, "");
@@ -70,6 +71,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var nomeValor = inputNome.value.trim();
         var cnpjValor = limparCnpj(inputCnpj.value.trim());
         var senhaValor = inputSenha.value.trim();
+        var confirmarSenhaValor = inputConfirmarSenha ? inputConfirmarSenha.value.trim() : "";
 
         if (nomeValor === "" || cnpjValor === "" || senhaValor === "") {
             mostrarAlerta("Nome, CNPJ e senha sao obrigatorios.", "danger");
@@ -83,6 +85,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (!validarSenha(senhaValor)) {
             mostrarAlerta("A senha deve ter pelo menos 8 caracteres, 1 letra maiuscula, 1 numero e 1 simbolo.", "danger");
+            return;
+        }
+
+        if (senhaValor !== confirmarSenhaValor) {
+            mostrarAlerta("As senhas nao coincidem.", "danger");
             return;
         }
 

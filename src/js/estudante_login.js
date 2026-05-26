@@ -107,6 +107,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         alternarCampoCadastro("nome", modoAluno !== "login");
         alternarCampoCadastro("senha", true);
+        alternarCampoCadastro("confirmar-senha", modoAluno !== "login");
         alternarCampoCadastro("curso", modoAluno !== "login");
 
         var inputSenha = document.getElementById("senha");
@@ -200,6 +201,15 @@ document.addEventListener("DOMContentLoaded", function () {
         if (modoAluno !== "login" && inputSenha && !validarSenha(senhaValor)) {
             mostrarAlerta("A senha deve ter pelo menos 8 caracteres, 1 letra maiuscula, 1 numero e 1 simbolo.", "danger");
             return false;
+        }
+
+        if (modoAluno !== "login") {
+            var inputConfirmarSenha = document.getElementById("confirmar-senha");
+            var confirmarSenhaValor = inputConfirmarSenha ? inputConfirmarSenha.value.trim() : "";
+            if (senhaValor !== confirmarSenhaValor) {
+                mostrarAlerta("As senhas nao coincidem.", "danger");
+                return false;
+            }
         }
 
         if (inputEmailVerificacao) {
