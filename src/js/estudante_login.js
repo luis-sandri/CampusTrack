@@ -1379,11 +1379,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function atualizarPopupsAbertos() {
         for (var id in marcadoresLocais) {
-            if (marcadoresLocais[id] && marcadoresLocais[id].isPopupOpen()) {
-                var local = buscarLocalPorId(id);
-                if (local) {
-                    marcadoresLocais[id].setPopupContent(montarPopupLocal(local));
-                }
+            if (!marcadoresLocais[id]) {
+                continue;
+            }
+
+            var local = buscarLocalPorId(id);
+            if (local) {
+                marcadoresLocais[id].setPopupContent(montarPopupLocal(local));
             }
         }
     }

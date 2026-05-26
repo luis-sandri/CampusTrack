@@ -104,7 +104,11 @@
       transform: scale(1.15);
     }
     .ct-btn-favorito.is-favorito {
-      color: #f59e0b;
+      color: #f59e0b !important;
+    }
+    .ct-location-result .ct-btn-favorito.is-favorito,
+    .leaflet-popup .ct-btn-favorito.is-favorito {
+      color: #f59e0b !important;
     }
     .ct-user-location {
       background-color: #16a34a;
@@ -385,6 +389,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="../../js/estudante_login.js?v=mapa-grafo-campus-fix-20260525" defer></script>
+  <script src="../../js/estudante_login.js?v=mapa-favoritos-20260525" defer></script>
 </body>
 </html>
