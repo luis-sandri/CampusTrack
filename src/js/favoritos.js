@@ -54,12 +54,17 @@ async function carregarFavoritos() {
                                 "<span class=\"ct-favorite-star\" aria-hidden=\"true\">&#9733;</span>" +
                                 "<h2 class=\"h6 fw-bold mb-0 text-primary\">" + textoSeguro(local.nome) + "</h2>" +
                             "</div>" +
-                            "<button " +
-                                "class=\"btn btn-sm btn-outline-danger ct-btn-remover-favorito\" " +
-                                "data-id-local=\"" + textoSeguro(local.id_local) + "\" " +
-                                "title=\"Remover dos favoritos\" " +
-                                "aria-label=\"Remover " + textoSeguro(local.nome) + " dos favoritos\"" +
-                            ">Remover</button>" +
+                            "<div class=\"d-flex gap-2\">" +
+                                "<a href=\"../visitante/instituicao.html?id_instituicao=" + textoSeguro(local.id_instituicao) + "&rota_para=" + textoSeguro(local.id_local) + "\" " +
+                                    "class=\"btn btn-sm btn-primary\" " +
+                                    "title=\"Ver no mapa e traçar rota\">Ir para local</a>" +
+                                "<button " +
+                                    "class=\"btn btn-sm btn-outline-danger ct-btn-remover-favorito\" " +
+                                    "data-id-local=\"" + textoSeguro(local.id_local) + "\" " +
+                                    "title=\"Remover dos favoritos\" " +
+                                    "aria-label=\"Remover " + textoSeguro(local.nome) + " dos favoritos\"" +
+                                ">Remover</button>" +
+                            "</div>" +
                         "</div>" +
                         "<p class=\"small text-muted mb-1\">" +
                             "<span class=\"fw-medium\">Instituicao:</span> " + textoSeguro(local.nome_instituicao) +

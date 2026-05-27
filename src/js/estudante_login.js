@@ -430,6 +430,14 @@ document.addEventListener("DOMContentLoaded", function () {
         if (listaLocais) {
             listaLocais.innerHTML = montarListaLocais(locaisMapa);
         }
+
+        var paramParams = new URLSearchParams(window.location.search);
+        var urlRotaPara = paramParams.get("rota_para");
+        if (urlRotaPara) {
+            setTimeout(function() {
+                selecionarLocal(urlRotaPara, true);
+            }, 1500);
+        }
     }
 
     function obterLocaisFixosInstituicao(id) {

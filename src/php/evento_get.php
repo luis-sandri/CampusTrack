@@ -29,7 +29,7 @@ if ((isset($_GET["id"]) || isset($_GET["id_instituicao"])) && $id_instituicao <=
             INNER JOIN Locais L ON L.id_local = E.id_local
             INNER JOIN Instituicao I ON I.id_instituicao = L.id_instituicao
             INNER JOIN Organizacao O ON O.id_organizacao = E.id_organizacao
-            WHERE E.status = 'ativo'";
+            WHERE E.status IN ('ativo', 'encerrado')";
 
     if ($id_instituicao > 0) {
         $sql .= " AND I.id_instituicao = ?";

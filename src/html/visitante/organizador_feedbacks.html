@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusTrack - Meus Feedbacks</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+  <style>
+    :root {
+      --bs-primary: #1e40af;
+      --bs-primary-rgb: 30, 64, 175;
+    }
+    body {
+      background-color: #f8f9fa;
+      color: #212529;
+    }
+  </style>
+</head>
+<body data-perfil="organizador">
+  <nav class="navbar bg-white border-bottom shadow-sm mb-4">
+    <div class="container">
+      <a class="navbar-brand fw-bold text-primary" href="organizador_dashboard.html">CampusTrack</a>
+      <a href="organizador_dashboard.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
+    </div>
+  </nav>
+
+  <main class="container mb-5">
+    <header class="mb-4">
+      <h1 class="h3 fw-bold text-primary">Meus Feedbacks</h1>
+      <p class="text-secondary">Acompanhe as avaliações que os estudantes deixaram sobre os seus eventos encerrados.</p>
+    </header>
+
+    <div id="lista" class="row g-3">
+        <p class="text-muted">Carregando...</p>
+    </div>
+  </main>
+
+  <script src="../../js/valida_sessao.js"></script>
+  <script src="../../js/organizador_feedbacks.js" defer></script>
+</body>
+</html>
