@@ -2,6 +2,7 @@
 include_once __DIR__ . "/conexao.php";
 include_once __DIR__ . "/valida_sessao_gerente.php";
 include_once __DIR__ . "/evento_funcoes.php";
+include_once __DIR__ . "/evento_listagem_funcoes.php";
 
 $retorno = [
     "status" => "",
@@ -36,33 +37,34 @@ if (!isset($_GET["data"])) {
             ];
         } else {
             $id_instituicao = (int) $_SESSION["gerente_id_instituicao"];
+            $data_fim = date("Y-m-d H:i:s", strtotime($data_informada . " +120 minutes"));
 
-            $sql = "SELECT L.id_local, L.nome, L.tipo, L.capacidade,
-                        CASE WHEN E.id_evento IS NOT NULL THEN 'Ocupado' ELSE 'Disponível' END AS status_disponibilidade
-                    FROM Locais L
-                    LEFT JOIN (
-                        SELECT DISTINCT id_local, 1 as id_evento
-                        FROM Evento
-                        WHERE status = 'ativo' 
-                          AND data <= ? AND DATE_ADD(data, INTERVAL 120 MINUTE) > ?
-                    ) E ON L.id_local = E.id_local
-                    WHERE L.id_instituicao = ?
-                    ORDER BY L.nome";
+            $sql = "SELECT E.id_evento, E.nome AS nome_evento, E.data,
+                        L.id_local, L.nome AS nome_local, L.tipo, L.capacidade,
+                        'Ocupado' AS status_disponibilidade
+                    FROM Evento E
+                    INNER JOIN Locais L ON L.id_local = E.id_local
+                    WHERE E.status = 'ativo'
+                      AND L.id_instituicao = ?
+                      AND E.data >= ?
+                      AND E.data < ?
+                    ORDER BY E.data ASC, L.nome ASC";
 
             $stmt = $conexao->prepare($sql);
-            $stmt->bind_param("ssi", $data_informada, $data_informada, $id_instituicao);
+            $stmt->bind_param("iss", $id_instituicao, $data_informada, $data_fim);
             $stmt->execute();
             $resultado = $stmt->get_result();
 
             $data = [];
             while ($row = $resultado->fetch_assoc()) {
+                $row["data_formatada"] = evento_formatar_data_exibicao((string) $row["data"]);
                 $data[] = $row;
             }
             $stmt->close();
 
             $retorno = [
                 "status" => "ok",
-                "mensagem" => "Lista carregada.",
+                "mensagem" => count($data) > 0 ? "Lista carregada." : "Nenhum espaço disponível para o período selecionado",
                 "data" => $data,
             ];
         }
