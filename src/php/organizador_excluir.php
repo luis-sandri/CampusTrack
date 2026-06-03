@@ -1,72 +1,24 @@
 <?php
 include_once __DIR__ . "/valida_sessao_organizacao.php";
 include_once __DIR__ . "/conexao.php";
-
-$retorno = [
-    "status" => "",
-    "mensagem" => "",
-    "data" => [],
-];
+require_once __DIR__ . "/core/resposta.php";
+require_once __DIR__ . "/organizadores/validacoes.php";
+require_once __DIR__ . "/organizadores/repositorio.php";
 
 $id_organizacao = (int) $_SESSION["organizacao_id"];
+$erros = [];
+$id_usuario = organizador_ler_id($_GET, $erros);
 
-if (isset($_GET["id"])) {
-    $id_raw = trim((string) $_GET["id"]);
-    $id = ctype_digit($id_raw) ? (int) $id_raw : 0;
-
-    if ($id <= 0) {
-        $retorno = [
-            "status" => "not ok",
-            "mensagem" => "ID invalido.",
-            "data" => [],
-        ];
-    } else {
-        $stmt = $conexao->prepare("SELECT id_organizador FROM Organizador WHERE id_usuario = ? AND id_organizacao = ?");
-        $stmt->bind_param("ii", $id, $id_organizacao);
-        $stmt->execute();
-        $resultado = $stmt->get_result();
-
-        if ($resultado->num_rows !== 1) {
-            $retorno = [
-                "status" => "not ok",
-                "mensagem" => "Organizador nao encontrado.",
-                "data" => [],
-            ];
-            $stmt->close();
-        } else {
-            $stmt->close();
-
-            $stmt = $conexao->prepare("DELETE FROM Usuario WHERE id_usuario = ?");
-            $stmt->bind_param("i", $id);
-            $stmt->execute();
-
-            if ($stmt->affected_rows > 0) {
-                $retorno = [
-                    "status" => "ok",
-                    "mensagem" => "Organizador excluido com sucesso.",
-                    "data" => [],
-                ];
-            } else {
-                $retorno = [
-                    "status" => "not ok",
-                    "mensagem" => "Nao foi possivel excluir o organizador.",
-                    "data" => [],
-                ];
-            }
-
-            $stmt->close();
-        }
-    }
-} else {
-    $retorno = [
-        "status" => "not ok",
-        "mensagem" => "Nao foi possivel excluir sem ID.",
-        "data" => [],
-    ];
+if (count($erros) > 0) {
+    responder_json(resposta_validacao($erros));
 }
 
-$conexao->close();
+if (!organizador_existe_na_organizacao($conexao, $id_usuario, $id_organizacao)) {
+    responder_json(resposta_erro("Organizador nao encontrado."));
+}
 
-header("Content-type:application/json;charset=utf-8");
-echo json_encode($retorno);
+if (!organizador_excluir($conexao, $id_usuario)) {
+    responder_json(resposta_erro("Nao foi possivel excluir o organizador. Verifique se existem registros vinculados."));
+}
 
+responder_json(resposta_ok("Organizador excluido com sucesso."));

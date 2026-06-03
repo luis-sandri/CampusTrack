@@ -6,8 +6,9 @@ document.addEventListener("DOMContentLoaded", function () {
 function badgeStatus(status) {
     var mapa = {
         "pendente": "warning",
-        "ativo":    "success",
-        "recusado": "danger"
+        "ativo": "success",
+        "recusado": "danger",
+        "encerrado": "secondary"
     };
     var cor = mapa[status] || "secondary";
     return '<span class="badge text-bg-' + cor + '">' + textoSeguro(status) + '</span>';
@@ -17,12 +18,11 @@ async function carregarMeusEventos() {
     var lista = document.getElementById("lista");
     lista.innerHTML = '<p class="text-muted">Carregando...</p>';
 
-    const retorno = await fetch("../../php/organizador_meus_eventos_get.php");
-    const resposta = await retorno.json();
+    const resposta = await ctJson("../../php/organizador_meus_eventos_get.php");
 
     if (resposta.status !== "ok") {
         lista.innerHTML = "";
-        alert("ERRO! " + resposta.mensagem);
+        alert("ERRO! " + ctMensagem(resposta));
         return;
     }
 
@@ -37,9 +37,9 @@ async function carregarMeusEventos() {
             '<th>Nome</th>' +
             '<th>Data</th>' +
             '<th>Local</th>' +
-            '<th>Instituição</th>' +
+            '<th>Instituicao</th>' +
             '<th>Status</th>' +
-            '<th>Ações</th>' +
+            '<th>Acoes</th>' +
         '</tr></thead><tbody>';
 
     if (resposta.data.length === 0) {
@@ -75,50 +75,44 @@ async function carregarMeusEventos() {
     lista.innerHTML = html;
 }
 
-window.encerrarEvento = async function(id_evento) {
-    if (!confirm("Tem certeza que deseja encerrar este evento manualmente? Estudantes ainda poderão avaliá-lo.")) return;
+window.encerrarEvento = async function (id_evento) {
+    if (!confirm("Tem certeza que deseja encerrar este evento manualmente? Estudantes ainda poderao avalia-lo.")) {
+        return;
+    }
 
     var dados = new FormData();
     dados.append("id_evento", id_evento);
 
-    try {
-        const retorno = await fetch("../../php/evento_encerrar.php", {
-            method: "POST",
-            body: dados
-        });
-        const resposta = await retorno.json();
+    const resposta = await ctJson("../../php/evento_encerrar.php", {
+        method: "POST",
+        body: dados
+    });
 
-        if (resposta.status === "ok") {
-            alert(resposta.mensagem);
-            carregarMeusEventos();
-        } else {
-            alert("ERRO! " + resposta.mensagem);
-        }
-    } catch (erro) {
-        alert("Erro de conexão ao encerrar evento.");
+    if (resposta.status === "ok") {
+        alert(ctMensagem(resposta));
+        carregarMeusEventos();
+    } else {
+        alert("ERRO! " + ctMensagem(resposta));
     }
 };
 
-window.excluirEvento = async function(id_evento) {
-    if (!confirm("Tem certeza que deseja EXCLUIR este evento? Esta ação não pode ser desfeita.")) return;
+window.excluirEvento = async function (id_evento) {
+    if (!confirm("Tem certeza que deseja EXCLUIR este evento? Esta acao nao pode ser desfeita.")) {
+        return;
+    }
 
     var dados = new FormData();
     dados.append("id_evento", id_evento);
 
-    try {
-        const retorno = await fetch("../../php/evento_excluir.php", {
-            method: "POST",
-            body: dados
-        });
-        const resposta = await retorno.json();
+    const resposta = await ctJson("../../php/evento_excluir.php", {
+        method: "POST",
+        body: dados
+    });
 
-        if (resposta.status === "ok") {
-            alert(resposta.mensagem);
-            carregarMeusEventos();
-        } else {
-            alert("ERRO! " + resposta.mensagem);
-        }
-    } catch (erro) {
-        alert("Erro de conexão ao excluir evento.");
+    if (resposta.status === "ok") {
+        alert(ctMensagem(resposta));
+        carregarMeusEventos();
+    } else {
+        alert("ERRO! " + ctMensagem(resposta));
     }
 };

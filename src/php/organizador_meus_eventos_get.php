@@ -1,46 +1,14 @@
 <?php
 include_once __DIR__ . "/valida_sessao_organizador.php";
 include_once __DIR__ . "/conexao.php";
-include_once __DIR__ . "/evento_listagem_funcoes.php";
-
-$retorno = [
-    "status"   => "",
-    "mensagem" => "",
-    "data"     => [],
-];
+require_once __DIR__ . "/core/resposta.php";
+require_once __DIR__ . "/eventos/repositorio.php";
 
 $id_organizador = (int) $_SESSION["organizador_id"];
+$eventos = evento_listar_por_organizador($conexao, $id_organizador);
 
-$sql = "SELECT E.id_evento, E.nome, E.data, E.status,
-            L.id_local, L.nome AS nome_local, L.tipo AS tipo_local,
-            I.id_instituicao, I.nome AS nome_instituicao,
-            O.nome AS nome_organizacao
-        FROM Evento E
-        INNER JOIN Locais L      ON L.id_local       = E.id_local
-        INNER JOIN Instituicao I ON I.id_instituicao = L.id_instituicao
-        INNER JOIN Organizacao O ON O.id_organizacao = E.id_organizacao
-        WHERE E.id_organizador = ?
-        ORDER BY E.data DESC, E.nome ASC";
-
-$stmt = $conexao->prepare($sql);
-$stmt->bind_param("i", $id_organizador);
-$stmt->execute();
-$resultado = $stmt->get_result();
-
-$data = [];
-while ($row = $resultado->fetch_assoc()) {
-    $row["data_formatada"] = evento_formatar_data_exibicao((string) $row["data"]);
-    $data[] = $row;
+if ($eventos === null) {
+    responder_json(resposta_erro("Nao foi possivel carregar os eventos."));
 }
-$stmt->close();
 
-$retorno = [
-    "status"   => "ok",
-    "mensagem" => "Lista carregada.",
-    "data"     => $data,
-];
-
-$conexao->close();
-
-header("Content-type:application/json;charset=utf-8");
-echo json_encode($retorno);
+responder_json(resposta_ok("Lista carregada.", $eventos));

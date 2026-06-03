@@ -1,6 +1,7 @@
 <?php
 include_once __DIR__ . "/valida_sessao_aluno.php";
 include_once __DIR__ . "/conexao.php";
+include_once __DIR__ . "/validacoes.php";
 
 $retorno = [
     "status"   => "",
@@ -8,16 +9,12 @@ $retorno = [
     "data"     => [],
 ];
 
-$id_local_raw = isset($_POST["id_local"]) ? trim((string) $_POST["id_local"]) : "";
-$id_local     = ctype_digit($id_local_raw) ? (int) $id_local_raw : 0;
-$id_aluno     = (int) $_SESSION["aluno_id"];
+$erros = [];
+$id_local = campo_inteiro_positivo_obrigatorio($_POST, "id_local", "Local", $erros);
+$id_aluno = (int) $_SESSION["aluno_id"];
 
-if ($id_local <= 0) {
-    $retorno = [
-        "status"   => "not ok",
-        "mensagem" => "Local inválido.",
-        "data"     => [],
-    ];
+if (count($erros) > 0) {
+    $retorno = retorno_validacao($erros);
 } else {
     $stmt = $conexao->prepare(
         "DELETE FROM Favorito WHERE id_aluno = ? AND id_local = ?"
@@ -34,7 +31,7 @@ if ($id_local <= 0) {
     } else {
         $retorno = [
             "status"   => "not ok",
-            "mensagem" => "Favorito não encontrado.",
+            "mensagem" => "Favorito nao encontrado.",
             "data"     => [],
         ];
     }

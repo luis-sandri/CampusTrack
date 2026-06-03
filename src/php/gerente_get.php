@@ -1,83 +1,34 @@
 <?php
 include_once __DIR__ . "/valida_sessao_admin.php";
 include_once __DIR__ . "/conexao.php";
-
-$retorno = [
-    "status" => "",
-    "mensagem" => "",
-    "data" => [],
-];
+require_once __DIR__ . "/core/resposta.php";
+require_once __DIR__ . "/gerentes/validacoes.php";
+require_once __DIR__ . "/gerentes/repositorio.php";
 
 if (isset($_GET["id"])) {
-    $id_raw = trim((string) $_GET["id"]);
-    $id = ctype_digit($id_raw) ? (int) $id_raw : 0;
+    $erros = [];
+    $id_gerente = gerente_ler_id($_GET, $erros);
 
-    if ($id <= 0) {
-        $retorno = [
-            "status" => "not ok",
-            "mensagem" => "ID invalido.",
-            "data" => [],
-        ];
-    } else {
-        $sql = "SELECT u.id_usuario, u.nome, u.email, g.id_instituicao, g.escola,
-            i.nome AS nome_instituicao
-            FROM Usuario u
-            INNER JOIN Gerente_Locais g ON g.id_gerente = u.id_usuario
-            LEFT JOIN Instituicao i ON g.id_instituicao = i.id_instituicao
-            WHERE u.id_usuario = ?";
-        $stmt = $conexao->prepare($sql);
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-        $resultado = $stmt->get_result();
-
-        $data = [];
-        while ($row = $resultado->fetch_assoc()) {
-            $data[] = $row;
-        }
-        $stmt->close();
-
-        if (count($data) > 0) {
-            $retorno = [
-                "status" => "ok",
-                "mensagem" => "Registro encontrado.",
-                "data" => $data,
-            ];
-        } else {
-            $retorno = [
-                "status" => "not ok",
-                "mensagem" => "Registro não encontrado.",
-                "data" => [],
-            ];
-        }
+    if (count($erros) > 0) {
+        responder_json(resposta_validacao($erros));
     }
-} else {
-    $sql = "SELECT u.id_usuario, u.nome, u.email, g.id_instituicao, g.escola,
-            i.nome AS nome_instituicao
-            FROM Usuario u
-            INNER JOIN Gerente_Locais g ON g.id_gerente = u.id_usuario
-            LEFT JOIN Instituicao i ON g.id_instituicao = i.id_instituicao
-            ORDER BY u.id_usuario";
-    $result = $conexao->query($sql);
-    $data = [];
-    if ($result) {
-        while ($row = $result->fetch_assoc()) {
-            $data[] = $row;
-        }
-        $retorno = [
-            "status" => "ok",
-            "mensagem" => "Lista carregada.",
-            "data" => $data,
-        ];
-    } else {
-        $retorno = [
-            "status" => "not ok",
-            "mensagem" => "Não foi possível carregar os gerentes.",
-            "data" => [],
-        ];
+
+    $gerentes = gerente_buscar_por_id($conexao, $id_gerente);
+
+    if ($gerentes === null) {
+        responder_json(resposta_erro("Nao foi possivel carregar o gerente."));
     }
+
+    if (count($gerentes) === 0) {
+        responder_json(resposta_erro("Registro nao encontrado."));
+    }
+
+    responder_json(resposta_ok("Registro encontrado.", $gerentes));
 }
 
-$conexao->close();
+$gerentes = gerente_listar($conexao);
+if ($gerentes === null) {
+    responder_json(resposta_erro("Nao foi possivel carregar os gerentes."));
+}
 
-header("Content-type:application/json;charset=utf-8");
-echo json_encode($retorno);
+responder_json(resposta_ok("Lista carregada.", $gerentes));

@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     instrucaoTexto.textContent = "Insira o código de 6 dígitos recebido no e-mail e defina a nova senha.";
                 }
             } else {
-                mostrarAlerta(data.mensagem || "Erro ao solicitar recuperação.", "danger");
+                mostrarAlerta(data.mensagem, "danger");
             }
         })
         .catch(function (error) {
@@ -112,7 +112,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     window.location.href = "login.html";
                 }, 2000);
             } else {
-                mostrarAlerta(data.mensagem || "Erro ao redefinir a senha.", "danger");
+                mostrarAlerta(data.mensagem, "danger");
             }
         })
         .catch(function (error) {

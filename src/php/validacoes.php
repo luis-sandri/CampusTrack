@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . "/core/resposta.php";
+
 function cpf_valido(string $cpf): bool
 {
     $cpf = preg_replace("/\D/", "", $cpf);
@@ -65,5 +67,103 @@ function senha_mensagem(): string
 function senha_hash(string $senha): string
 {
     return password_hash($senha, PASSWORD_BCRYPT);
+}
+
+function campo_valor(array $origem, string $campo): ?string
+{
+    if (!array_key_exists($campo, $origem)) {
+        return null;
+    }
+
+    return trim((string) $origem[$campo]);
+}
+
+function campo_texto_obrigatorio(array $origem, string $campo, string $rotulo, array &$erros): string
+{
+    $valor = campo_valor($origem, $campo);
+
+    if ($valor === null) {
+        $erros[] = $rotulo . " nao foi enviado.";
+        return "";
+    }
+
+    if ($valor === "") {
+        $erros[] = $rotulo . " e obrigatorio.";
+        return "";
+    }
+
+    return $valor;
+}
+
+function campo_email_obrigatorio(array $origem, string $campo, string $rotulo, array &$erros): string
+{
+    $valor = campo_texto_obrigatorio($origem, $campo, $rotulo, $erros);
+
+    if ($valor !== "" && !filter_var($valor, FILTER_VALIDATE_EMAIL)) {
+        $erros[] = $rotulo . " invalido.";
+    }
+
+    return $valor;
+}
+
+function campo_inteiro_positivo_obrigatorio(array $origem, string $campo, string $rotulo, array &$erros): int
+{
+    $valor = campo_valor($origem, $campo);
+
+    if ($valor === null) {
+        $erros[] = $rotulo . " nao foi enviado.";
+        return 0;
+    }
+
+    if ($valor === "") {
+        $erros[] = $rotulo . " e obrigatorio.";
+        return 0;
+    }
+
+    if (!ctype_digit($valor) || (int) $valor <= 0) {
+        $erros[] = $rotulo . " deve ser um numero inteiro positivo.";
+        return 0;
+    }
+
+    return (int) $valor;
+}
+
+function campo_decimal_obrigatorio(array $origem, string $campo, string $rotulo, array &$erros, $minimo = null, $maximo = null): string
+{
+    $valor = campo_valor($origem, $campo);
+
+    if ($valor === null) {
+        $erros[] = $rotulo . " nao foi enviado.";
+        return "";
+    }
+
+    if ($valor === "") {
+        $erros[] = $rotulo . " e obrigatorio.";
+        return "";
+    }
+
+    $normalizado = str_replace(",", ".", $valor);
+
+    if (!is_numeric($normalizado)) {
+        $erros[] = $rotulo . " deve ser um numero valido.";
+        return "";
+    }
+
+    $numero = (float) $normalizado;
+
+    if ($minimo !== null && $numero < $minimo) {
+        $erros[] = $rotulo . " deve ser maior ou igual a " . $minimo . ".";
+    }
+
+    if ($maximo !== null && $numero > $maximo) {
+        $erros[] = $rotulo . " deve ser menor ou igual a " . $maximo . ".";
+    }
+
+    return $normalizado;
+}
+
+function retorno_validacao(array $erros): array
+{
+    return resposta_validacao($erros);
 }
 

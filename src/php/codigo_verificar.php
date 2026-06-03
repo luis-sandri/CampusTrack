@@ -9,31 +9,46 @@ $retorno = [
     "data" => [],
 ];
 
-$email = isset($_POST["email_verificacao"]) ? trim((string) $_POST["email_verificacao"]) : "";
-$codigo_inserido = isset($_POST["codigo"]) ? trim((string) $_POST["codigo"]) : "";
-$nome = isset($_POST["nome"]) ? trim((string) $_POST["nome"]) : "";
-$senha = isset($_POST["senha"]) ? trim((string) $_POST["senha"]) : "";
-$curso = isset($_POST["curso"]) ? trim((string) $_POST["curso"]) : "";
-$id_instituicao_raw = isset($_POST["id_instituicao"]) ? trim((string) $_POST["id_instituicao"]) : "";
-$id_instituicao = ctype_digit($id_instituicao_raw) ? (int) $id_instituicao_raw : 0;
 $modo = isset($_POST["modo"]) && $_POST["modo"] === "login" ? "login" : "cadastro";
 $eh_cadastro = $modo !== "login";
+$erros = [];
+
+$email = campo_email_obrigatorio($_POST, "email_verificacao", "E-mail", $erros);
+$codigo_inserido = campo_texto_obrigatorio($_POST, "codigo", "Codigo", $erros);
+$senha = campo_texto_obrigatorio($_POST, "senha", "Senha", $erros);
+$id_instituicao = campo_inteiro_positivo_obrigatorio($_POST, "id_instituicao", "Instituicao", $erros);
+$nome = "";
+$curso = "";
+$confirmar_senha = "";
+
+if ($codigo_inserido !== "" && !preg_match("/^\d{6}$/", $codigo_inserido)) {
+    $erros[] = "Codigo deve conter 6 digitos.";
+}
+
+if ($email !== "" && !preg_match("/@pucpr\.edu\.br$/", $email)) {
+    $erros[] = "O e-mail deve ser institucional (@pucpr.edu.br).";
+}
+
+if ($eh_cadastro) {
+    $nome = campo_texto_obrigatorio($_POST, "nome", "Nome", $erros);
+    $curso = campo_texto_obrigatorio($_POST, "curso", "Curso", $erros);
+    $confirmar_senha = campo_texto_obrigatorio($_POST, "confirmar_senha", "Confirmacao de senha", $erros);
+
+    if ($senha !== "" && !senha_valida($senha)) {
+        $erros[] = senha_mensagem();
+    }
+
+    if ($senha !== "" && $confirmar_senha !== "" && $senha !== $confirmar_senha) {
+        $erros[] = "As senhas nao coincidem.";
+    }
+}
+
 $id_usuario_logado = null;
 $nome_logado = $nome;
 $id_instituicao_logado = $id_instituicao;
 
-if ($email === "" || $codigo_inserido === "") {
-    $retorno["status"] = "not ok";
-    $retorno["mensagem"] = "Dados incompletos informados.";
-} else if (!$eh_cadastro && ($senha === "" || $id_instituicao <= 0)) {
-    $retorno["status"] = "not ok";
-    $retorno["mensagem"] = "E-mail, senha, instituicao e codigo sao obrigatorios.";
-} else if ($eh_cadastro && ($nome === "" || $senha === "" || $curso === "" || $id_instituicao <= 0)) {
-    $retorno["status"] = "not ok";
-    $retorno["mensagem"] = "Nome, e-mail, senha, curso, instituicao e codigo sao obrigatorios.";
-} else if ($eh_cadastro && !senha_valida($senha)) {
-    $retorno["status"] = "not ok";
-    $retorno["mensagem"] = senha_mensagem();
+if (count($erros) > 0) {
+    $retorno = retorno_validacao($erros);
 } else if (!isset($_SESSION["codigo_2fa_" . $email])) {
     $retorno["status"] = "not ok";
     $retorno["mensagem"] = "Nenhum codigo ativo encontrado para este e-mail.";
@@ -49,61 +64,56 @@ if ($email === "" || $codigo_inserido === "") {
         $retorno["status"] = "not ok";
         $retorno["mensagem"] = "Codigo incorreto. Tente novamente.";
     } else if ($eh_cadastro) {
-        if (!preg_match("/@pucpr\.edu\.br$/", $email)) {
+        $stmt = $conexao->prepare("SELECT id_usuario FROM Usuario WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+
+        if ($resultado->num_rows > 0) {
             $retorno["status"] = "not ok";
-            $retorno["mensagem"] = "O e-mail deve ser institucional (@pucpr.edu.br).";
+            $retorno["mensagem"] = "Este e-mail ja possui cadastro.";
+            $stmt->close();
         } else {
-            $stmt = $conexao->prepare("SELECT id_usuario FROM Usuario WHERE email = ?");
-            $stmt->bind_param("s", $email);
+            $stmt->close();
+
+            $stmt = $conexao->prepare("SELECT id_instituicao FROM Instituicao WHERE id_instituicao = ?");
+            $stmt->bind_param("i", $id_instituicao);
             $stmt->execute();
             $resultado = $stmt->get_result();
 
-            if ($resultado->num_rows > 0) {
+            if ($resultado->num_rows !== 1) {
                 $retorno["status"] = "not ok";
-                $retorno["mensagem"] = "Este e-mail ja possui cadastro.";
+                $retorno["mensagem"] = "Instituicao nao encontrada.";
                 $stmt->close();
             } else {
                 $stmt->close();
+                $conexao->begin_transaction();
 
-                $stmt = $conexao->prepare("SELECT id_instituicao FROM Instituicao WHERE id_instituicao = ?");
-                $stmt->bind_param("i", $id_instituicao);
-                $stmt->execute();
-                $resultado = $stmt->get_result();
+                try {
+                    $senha_hash = senha_hash($senha);
+                    $stmt = $conexao->prepare("INSERT INTO Usuario (nome, email, senha) VALUES (?, ?, ?)");
+                    $stmt->bind_param("sss", $nome, $email, $senha_hash);
+                    $stmt->execute();
+                    $id_usuario = (int) $conexao->insert_id;
+                    $stmt->close();
 
-                if ($resultado->num_rows !== 1) {
+                    $stmt = $conexao->prepare("INSERT INTO Aluno (id_aluno, id_instituicao, curso) VALUES (?, ?, ?)");
+                    $stmt->bind_param("iis", $id_usuario, $id_instituicao, $curso);
+                    $stmt->execute();
+                    $stmt->close();
+
+                    $conexao->commit();
+
+                    $retorno["status"] = "ok";
+                    $retorno["mensagem"] = "Aluno cadastrado com sucesso.";
+                    $retorno["data"] = [["id_usuario" => $id_usuario]];
+                    $id_usuario_logado = $id_usuario;
+                    $nome_logado = $nome;
+                    $id_instituicao_logado = $id_instituicao;
+                } catch (Throwable $e) {
+                    $conexao->rollback();
                     $retorno["status"] = "not ok";
-                    $retorno["mensagem"] = "Instituicao nao encontrada.";
-                    $stmt->close();
-                } else {
-                    $stmt->close();
-                    $conexao->begin_transaction();
-
-                    try {
-                        $senha = senha_hash($senha);
-                        $stmt = $conexao->prepare("INSERT INTO Usuario (nome, email, senha) VALUES (?, ?, ?)");
-                        $stmt->bind_param("sss", $nome, $email, $senha);
-                        $stmt->execute();
-                        $id_usuario = (int) $conexao->insert_id;
-                        $stmt->close();
-
-                        $stmt = $conexao->prepare("INSERT INTO Aluno (id_aluno, id_instituicao, curso) VALUES (?, ?, ?)");
-                        $stmt->bind_param("iis", $id_usuario, $id_instituicao, $curso);
-                        $stmt->execute();
-                        $stmt->close();
-
-                        $conexao->commit();
-
-                        $retorno["status"] = "ok";
-                        $retorno["mensagem"] = "Aluno cadastrado com sucesso.";
-                        $retorno["data"] = [["id_usuario" => $id_usuario]];
-                        $id_usuario_logado = $id_usuario;
-                        $nome_logado = $nome;
-                        $id_instituicao_logado = $id_instituicao;
-                    } catch (Throwable $e) {
-                        $conexao->rollback();
-                        $retorno["status"] = "not ok";
-                        $retorno["mensagem"] = "Nao foi possivel cadastrar o aluno.";
-                    }
+                    $retorno["mensagem"] = "Nao foi possivel cadastrar o aluno.";
                 }
             }
         }
@@ -148,7 +158,7 @@ if ($email === "" || $codigo_inserido === "") {
         $_SESSION["aluno_id"] = $id_usuario_logado;
         $_SESSION["aluno_email"] = $email;
         $_SESSION["aluno_nome"] = $nome_logado !== "" ? $nome_logado : $email;
-        $_SESSION["aluno_id_instituicao"] = $id_instituicao_logado > 0 ? $id_instituicao_logado : ($_SESSION["aluno_id_instituicao"] ?? null);
+        $_SESSION["aluno_id_instituicao"] = $id_instituicao_logado;
         $_SESSION["ultima_atividade"] = time();
 
         unset($_SESSION["codigo_2fa_" . $email]);

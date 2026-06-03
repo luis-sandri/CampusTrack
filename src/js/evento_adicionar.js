@@ -1,44 +1,36 @@
 document.addEventListener("DOMContentLoaded", function () {
     valida_sessao();
     carregarInstituicoes();
-});
 
-document.getElementById("evento-id_instituicao").addEventListener("change", function () {
-    carregarLocais(this.value);
-});
+    document.getElementById("evento-id_instituicao").addEventListener("change", function () {
+        carregarLocais(this.value);
+    });
 
-document.getElementById("form-evento").addEventListener("submit", function (event) {
-    event.preventDefault();
-    adicionar_evento();
+    document.getElementById("form-evento").addEventListener("submit", function (event) {
+        event.preventDefault();
+        adicionar_evento(this);
+    });
 });
 
 async function carregarInstituicoes() {
-    const retorno = await fetch("../../php/instituicao_get.php");
-    const resposta = await retorno.json();
-
+    const resposta = await ctJson("../../php/instituicao_get.php");
     var selectInstituicao = document.getElementById("evento-id_instituicao");
 
-    if (resposta.status == "ok") {
-        if (!Array.isArray(resposta.data)) {
-            alert("ERRO! Lista de instituicoes invalida no retorno do servidor.");
-            return;
-        }
-
+    if (resposta.status !== "ok") {
         selectInstituicao.innerHTML = '<option value="">Selecione</option>';
+        alert("ERRO! " + ctMensagem(resposta));
+        return;
+    }
 
-        for (var i = 0; i < resposta.data.length; i++) {
-            var instituicao = resposta.data[i];
+    if (!Array.isArray(resposta.data)) {
+        alert("ERRO! Lista de instituicoes invalida no retorno do servidor.");
+        return;
+    }
 
-            if (!instituicao.id_instituicao || !instituicao.nome) {
-                alert("ERRO! Instituicao com dados incompletos no retorno do servidor.");
-                return;
-            }
-
-            selectInstituicao.innerHTML += "<option value='" + instituicao.id_instituicao + "'>" + instituicao.nome + "</option>";
-        }
-    } else {
-        selectInstituicao.innerHTML = '<option value="">Selecione</option>';
-        alert("ERRO! " + resposta.mensagem);
+    selectInstituicao.innerHTML = '<option value="">Selecione</option>';
+    for (var i = 0; i < resposta.data.length; i++) {
+        var instituicao = resposta.data[i];
+        selectInstituicao.innerHTML += "<option value='" + instituicao.id_instituicao + "'>" + instituicao.nome + "</option>";
     }
 }
 
@@ -52,72 +44,31 @@ async function carregarLocais(id_instituicao) {
         return;
     }
 
-    const retorno = await fetch("../../php/local_get.php?id_instituicao=" + encodeURIComponent(id_instituicao));
-    const resposta = await retorno.json();
+    const resposta = await ctJson("../../php/local_get.php?id_instituicao=" + encodeURIComponent(id_instituicao));
 
-    if (resposta.status == "ok") {
-        if (!Array.isArray(resposta.data)) {
-            alert("ERRO! Lista de locais invalida no retorno do servidor.");
-            return;
-        }
-
-        if (resposta.data.length === 0) {
-            selectLocal.innerHTML = '<option value="">Nenhum local disponivel</option>';
-            return;
-        }
-
-        for (var i = 0; i < resposta.data.length; i++) {
-            var local = resposta.data[i];
-
-            if (!local.id_local || !local.nome) {
-                alert("ERRO! Local com dados incompletos no retorno do servidor.");
-                return;
-            }
-
-            selectLocal.innerHTML += "<option value='" + local.id_local + "'>" + local.nome + "</option>";
-        }
-
-        selectLocal.disabled = false;
-    } else {
-        alert("ERRO! " + resposta.mensagem);
+    if (resposta.status !== "ok") {
+        alert("ERRO! " + ctMensagem(resposta));
+        return;
     }
+
+    if (!Array.isArray(resposta.data) || resposta.data.length === 0) {
+        selectLocal.innerHTML = '<option value="">Nenhum local disponivel</option>';
+        return;
+    }
+
+    for (var i = 0; i < resposta.data.length; i++) {
+        var local = resposta.data[i];
+        selectLocal.innerHTML += "<option value='" + local.id_local + "'>" + local.nome + "</option>";
+    }
+
+    selectLocal.disabled = false;
 }
 
-async function adicionar_evento() {
-    var nome = document.getElementById("evento-nome").value.trim();
-    var id_instituicao = document.getElementById("evento-id_instituicao").value.trim();
-    var id_local = document.getElementById("evento-id_local").value.trim();
-    var data = document.getElementById("evento-data").value.trim();
+async function adicionar_evento(form) {
+    const resposta = await ctEnviarFormulario(form, "../../php/evento_adicionar.php");
+    ctAlertarResposta(resposta);
 
-    if (nome === "" || id_instituicao === "" || id_local === "" || data === "") {
-        alert("preencha toddos os campos");
-        return;
-    }
-
-    const dataSelecionada = new Date(data);
-    const dataAtual = new Date();
-
-    if (dataSelecionada <= dataAtual) {
-        window.__alertaOriginal("A data e horário do evento devem ser no futuro.");
-        return;
-    }
-
-    const novo_evento = new FormData();
-    novo_evento.append("nome", nome);
-    novo_evento.append("id_instituicao", id_instituicao);
-    novo_evento.append("id_local", id_local);
-    novo_evento.append("data", data);
-
-    const retorno = await fetch("../../php/evento_adicionar.php", {
-        method: "POST",
-        body: novo_evento,
-    });
-    const resposta = await retorno.json();
-
-    if (resposta.status == "ok") {
-        window.__alertaOriginal("Sucesso! " + resposta.mensagem);
+    if (resposta.status === "ok") {
         window.location.href = "organizador_dashboard.html";
-    } else {
-        window.__alertaOriginal(resposta.mensagem);
     }
 }

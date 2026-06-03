@@ -1,8 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
     var formLogin = document.getElementById("form-organizador-login");
     var alertaMsg = document.getElementById("alerta-msg");
-    var inputEmail = document.getElementById("email");
-    var inputSenha = document.getElementById("senha");
 
     function mostrarAlerta(mensagem, tipo) {
         alertaMsg.textContent = mensagem;
@@ -17,24 +15,14 @@ document.addEventListener("DOMContentLoaded", function () {
         e.preventDefault();
         esconderAlerta();
 
-        var emailValor = inputEmail.value.trim();
-        var senhaValor = inputSenha.value.trim();
-
-        if (emailValor === "" || senhaValor === "") {
-            mostrarAlerta("Preencha todos os campos.", "danger");
-            return;
-        }
-
         var btnSubmit = document.getElementById("btn-organizador-entrar");
         var originalText = btnSubmit.textContent;
         btnSubmit.textContent = "Entrando...";
         btnSubmit.disabled = true;
 
-        var formData = new FormData(formLogin);
-
         fetch("../../php/organizador_login.php", {
             method: "POST",
-            body: formData
+            body: new FormData(formLogin)
         })
         .then(function (response) {
             return response.json();
@@ -44,18 +32,18 @@ document.addEventListener("DOMContentLoaded", function () {
             btnSubmit.disabled = false;
 
             if (data.status === "ok") {
-                mostrarAlerta("Acesso validado! Redirecionando...", "success");
+                mostrarAlerta(data.mensagem, "success");
                 setTimeout(function () {
                     window.location.href = "organizador_dashboard.html";
                 }, 1000);
             } else {
-                mostrarAlerta(data.mensagem || "E-mail ou senha invalidos.", "danger");
+                mostrarAlerta(data.mensagem, "danger");
             }
         })
         .catch(function (error) {
             btnSubmit.textContent = originalText;
             btnSubmit.disabled = false;
-            mostrarAlerta("Erro de conexao.", "danger");
+            mostrarAlerta("Erro de conexao: " + error.message, "danger");
             console.error(error);
         });
     });

@@ -34,12 +34,11 @@ async function carregarEventos() {
     lista.innerHTML = '<div class="col-12 text-secondary">Carregando eventos...</div>';
 
     try {
-        const retorno = await fetch(montarUrlEventos());
-        const resposta = await retorno.json();
+        const resposta = await ctJson(montarUrlEventos());
 
         if (resposta.status !== "ok") {
             lista.innerHTML = "";
-            mostrarAlertaEventos(resposta.mensagem || "Nao foi possivel carregar os eventos.", "danger");
+            mostrarAlertaEventos(ctMensagem(resposta), "danger");
             return;
         }
 
@@ -116,24 +115,23 @@ window.enviarFeedback = async function (event, idEvento) {
     data.append("comentario", comentario);
 
     try {
-        const retorno = await fetch("../../php/comentario_adicionar.php", {
+        const resposta = await ctJson("../../php/comentario_adicionar.php", {
             method: "POST",
             body: data
         });
-        const resposta = await retorno.json();
 
         if (resposta.status === "ok") {
             if (window.__alertaOriginal) {
-                window.__alertaOriginal(resposta.mensagem);
+                window.__alertaOriginal(ctMensagem(resposta));
             } else {
-                alert(resposta.mensagem);
+                alert(ctMensagem(resposta));
             }
             const container = document.getElementById("container-feedback-" + idEvento);
             if (container) {
                 container.innerHTML = '<p class="text-success mb-0 fw-bold">Agradecemos o seu feedback!</p>';
             }
         } else {
-            alert(resposta.mensagem);
+            alert(ctMensagem(resposta));
         }
     } catch (erro) {
         alert("Erro ao enviar avaliação.");

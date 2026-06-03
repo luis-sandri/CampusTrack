@@ -1,13 +1,14 @@
 <?php
 session_start();
 include_once __DIR__ . "/conexao.php";
+include_once __DIR__ . "/validacoes.php";
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require __DIR__ . '/libs/PHPMailer/Exception.php';
-require __DIR__ . '/libs/PHPMailer/PHPMailer.php';
-require __DIR__ . '/libs/PHPMailer/SMTP.php';
+require __DIR__ . "/libs/PHPMailer/Exception.php";
+require __DIR__ . "/libs/PHPMailer/PHPMailer.php";
+require __DIR__ . "/libs/PHPMailer/SMTP.php";
 
 $retorno = [
     "status" => "",
@@ -15,21 +16,32 @@ $retorno = [
     "data" => [],
 ];
 
-$email = isset($_POST["email"]) ? trim((string) $_POST["email"]) : "";
-$senha = isset($_POST["senha"]) ? trim((string) $_POST["senha"]) : "";
-$id_instituicao_raw = isset($_POST["id_instituicao"]) ? trim((string) $_POST["id_instituicao"]) : "";
-$id_instituicao = ctype_digit($id_instituicao_raw) ? (int) $id_instituicao_raw : 0;
 $modo = isset($_POST["modo"]) && $_POST["modo"] === "login" ? "login" : "cadastro";
+$erros = [];
+$email = campo_email_obrigatorio($_POST, "email", "E-mail", $erros);
+$senha = campo_texto_obrigatorio($_POST, "senha", "Senha", $erros);
+$id_instituicao = campo_inteiro_positivo_obrigatorio($_POST, "id_instituicao", "Instituicao", $erros);
 
-if ($email === "" || $id_instituicao <= 0) {
-    $retorno["status"] = "not ok";
-    $retorno["mensagem"] = "E-mail e instituicao sao obrigatorios.";
-} else if ($modo === "login" && $senha === "") {
-    $retorno["status"] = "not ok";
-    $retorno["mensagem"] = "E-mail, senha e instituicao sao obrigatorios.";
-} else if (!preg_match("/@pucpr\.edu\.br$/", $email)) {
-    $retorno["status"] = "not ok";
-    $retorno["mensagem"] = "O e-mail deve ser institucional (@pucpr.edu.br).";
+if ($email !== "" && !preg_match("/@pucpr\.edu\.br$/", $email)) {
+    $erros[] = "O e-mail deve ser institucional (@pucpr.edu.br).";
+}
+
+if ($modo === "cadastro") {
+    campo_texto_obrigatorio($_POST, "nome", "Nome", $erros);
+    campo_texto_obrigatorio($_POST, "curso", "Curso", $erros);
+    $confirmar_senha = campo_texto_obrigatorio($_POST, "confirmar_senha", "Confirmacao de senha", $erros);
+
+    if ($senha !== "" && !senha_valida($senha)) {
+        $erros[] = senha_mensagem();
+    }
+
+    if ($senha !== "" && $confirmar_senha !== "" && $senha !== $confirmar_senha) {
+        $erros[] = "As senhas nao coincidem.";
+    }
+}
+
+if (count($erros) > 0) {
+    $retorno = retorno_validacao($erros);
 } else {
     $stmt = $conexao->prepare("SELECT id_instituicao FROM Instituicao WHERE id_instituicao = ?");
     $stmt->bind_param("i", $id_instituicao);
@@ -80,19 +92,19 @@ if ($email === "" || $id_instituicao <= 0) {
 
             try {
                 $mail->isSMTP();
-                $mail->Host = 'smtp.gmail.com';
+                $mail->Host = "smtp.gmail.com";
                 $mail->SMTPAuth = true;
-                $mail->Username = 'Campustrackbr@gmail.com';
-                $mail->Password = 'vtax copa hxps dzxo';
+                $mail->Username = "Campustrackbr@gmail.com";
+                $mail->Password = "vtax copa hxps dzxo";
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port = 587;
-                $mail->CharSet = 'UTF-8';
+                $mail->CharSet = "UTF-8";
 
-                $mail->setFrom('Campustrackbr@gmail.com', 'CampusTrack Estudante');
+                $mail->setFrom("Campustrackbr@gmail.com", "CampusTrack Estudante");
                 $mail->addAddress($email);
 
                 $mail->isHTML(true);
-                $mail->Subject = 'Seu Codigo de Acesso - CampusTrack';
+                $mail->Subject = "Seu Codigo de Acesso - CampusTrack";
                 $mail->Body = '
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
                         <h2 style="color: #1e40af; text-align: center;">Codigo de Acesso CampusTrack</h2>
@@ -113,7 +125,6 @@ if ($email === "" || $id_instituicao <= 0) {
             } catch (Exception $e) {
                 $retorno["status"] = "not ok";
                 $retorno["mensagem"] = "Nao foi possivel enviar o codigo. Tente novamente mais tarde.";
-                // $retorno["mensagem"] = "Erro do Mailer: {$mail->ErrorInfo}"; // Para depurar
             }
         }
     }

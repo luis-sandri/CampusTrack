@@ -7,12 +7,11 @@ async function carregarEventosPendentes() {
     var lista = document.getElementById("lista");
     lista.innerHTML = '<p class="text-muted">Carregando...</p>';
 
-    const retorno = await fetch("../../php/evento_pendente_get.php");
-    const resposta = await retorno.json();
+    const resposta = await ctJson("../../php/evento_pendente_get.php");
 
     if (resposta.status !== "ok") {
         lista.innerHTML = "";
-        alert("ERRO! " + resposta.mensagem);
+        alert("ERRO! " + ctMensagem(resposta));
         return;
     }
 
@@ -88,16 +87,15 @@ async function alterarStatus(id, novo_status) {
     formData.append("id_evento", id);
     formData.append("novo_status", novo_status);
 
-    const retorno = await fetch("../../php/evento_alterar_status.php", {
+    const resposta = await ctJson("../../php/evento_alterar_status.php", {
         method: "POST",
         body: formData,
     });
-    const resposta = await retorno.json();
 
     if (resposta.status === "ok") {
-        alert(resposta.mensagem);
+        alert(ctMensagem(resposta));
         window.location.reload();
     } else {
-        alert("ERRO! " + resposta.mensagem);
+        alert("ERRO! " + ctMensagem(resposta));
     }
 }

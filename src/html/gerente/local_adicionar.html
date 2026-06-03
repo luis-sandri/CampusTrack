@@ -43,38 +43,38 @@
             <div class="col-md-4 mb-3">
               <label for="local-id_instituicao" class="form-label">Instituição <span
                   class="text-danger">*</span></label>
-              <select id="local-id_instituicao" class="form-control" required>
+              <select id="local-id_instituicao" name="id_instituicao" class="form-control" required>
                 <option value="">Carregando…</option>
               </select>
             </div>
             <div class="col-md-4 mb-3">
               <label for="local-tipo_escola" class="form-label">Tipo de escola <span
                   class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="local-tipo_escola" maxlength="50" required>
+              <input type="text" class="form-control" id="local-tipo_escola" name="tipo_escola" maxlength="50" required>
             </div>
             <div class="col-md-4 mb-3">
               <label for="local-tipo" class="form-label">Tipo <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="local-tipo" maxlength="50" required>
+              <input type="text" class="form-control" id="local-tipo" name="tipo" maxlength="50" required>
             </div>
           </div>
           <div class="row">
             <div class="col-12 mb-3">
               <label for="local-nome" class="form-label">Nome <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="local-nome" maxlength="255" required>
+              <input type="text" class="form-control" id="local-nome" name="nome" maxlength="255" required>
             </div>
           </div>
           <div class="row">
             <div class="col-md-4 mb-3">
               <label for="local-capacidade" class="form-label">Capacidade <span class="text-danger">*</span></label>
-              <input type="number" class="form-control" id="local-capacidade" min="0" required>
+              <input type="number" class="form-control" id="local-capacidade" name="capacidade" min="1" required>
             </div>
             <div class="col-md-4 mb-3">
               <label for="local-longitude" class="form-label">Longitude <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="local-longitude" maxlength="10" required>
+              <input type="text" class="form-control" id="local-longitude" name="longitude" maxlength="10" required>
             </div>
             <div class="col-md-4 mb-3">
               <label for="local-latitude" class="form-label">Latitude <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="local-latitude" maxlength="8" required>
+              <input type="text" class="form-control" id="local-latitude" name="latitude" maxlength="8" required>
             </div>
           </div>
           <div>
@@ -90,6 +90,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="../../js/valida_sessao.js"></script>
+  <script src="../../js/shared/formulario.js"></script>
   <script src="../../js/local_adicionar.js"></script>
 </body>
 

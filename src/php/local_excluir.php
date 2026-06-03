@@ -1,54 +1,24 @@
 <?php
 include_once __DIR__ . "/valida_sessao_gerente.php";
 include_once __DIR__ . "/conexao.php";
+require_once __DIR__ . "/core/resposta.php";
+require_once __DIR__ . "/locais/validacoes.php";
+require_once __DIR__ . "/locais/repositorio.php";
 
-$retorno = [
-    "status" => "",
-    "mensagem" => "",
-    "data" => [],
-];
+$erros = [];
+$id_local = local_ler_id($_GET, $erros);
+$id_instituicao_gerente = (int) $_SESSION["gerente_id_instituicao"];
 
-if (isset($_GET["id"])) {
-    $id_raw = trim((string) $_GET["id"]);
-    $id = ctype_digit($id_raw) ? (int) $id_raw : 0;
-
-    if ($id <= 0) {
-        $retorno = [
-            "status" => "not ok",
-            "mensagem" => "ID invalido.",
-            "data" => [],
-        ];
-    } else {
-        $id_instituicao_gerente = (int) $_SESSION["gerente_id_instituicao"];
-        $stmt = $conexao->prepare("DELETE FROM Locais WHERE id_local = ? AND id_instituicao = ?");
-        $stmt->bind_param("ii", $id, $id_instituicao_gerente);
-        $stmt->execute();
-
-        if ($stmt->affected_rows > 0) {
-            $retorno = [
-                "status" => "ok",
-                "mensagem" => "Registro excluído com sucesso.",
-                "data" => [],
-            ];
-        } else {
-            $retorno = [
-                "status" => "not ok",
-                "mensagem" => "Não foi possível excluir o registro.",
-                "data" => [],
-            ];
-        }
-
-        $stmt->close();
-    }
-} else {
-    $retorno = [
-        "status" => "not ok",
-        "mensagem" => "Não foi possível excluir sem ID.",
-        "data" => [],
-    ];
+if (count($erros) > 0) {
+    responder_json(resposta_validacao($erros));
 }
 
-$conexao->close();
+if (!local_existe_na_instituicao($conexao, $id_local, $id_instituicao_gerente)) {
+    responder_json(resposta_erro("Local nao encontrado ou sem permissao para excluir."));
+}
 
-header("Content-type:application/json;charset=utf-8");
-echo json_encode($retorno);
+if (!local_excluir($conexao, $id_local, $id_instituicao_gerente)) {
+    responder_json(resposta_erro("Nao foi possivel excluir o registro. Verifique se existem registros vinculados."));
+}
+
+responder_json(resposta_ok("Registro excluido com sucesso."));

@@ -8,19 +8,27 @@ $retorno = [
     "data" => [],
 ];
 
-$nome = isset($_POST["nome"]) ? trim((string) $_POST["nome"]) : "";
-$cnpj = isset($_POST["cnpj"]) ? preg_replace("/\D/", "", (string) $_POST["cnpj"]) : "";
-$senha = isset($_POST["senha"]) ? trim((string) $_POST["senha"]) : "";
+$erros = [];
+$nome = campo_texto_obrigatorio($_POST, "nome", "Nome", $erros);
+$cnpj_raw = campo_texto_obrigatorio($_POST, "cnpj", "CNPJ", $erros);
+$cnpj = preg_replace("/\D/", "", $cnpj_raw);
+$senha = campo_texto_obrigatorio($_POST, "senha", "Senha", $erros);
+$confirmar_senha = campo_texto_obrigatorio($_POST, "confirmar_senha", "Confirmacao de senha", $erros);
 
-if ($nome === "" || $cnpj === "" || $senha === "") {
-    $retorno["status"] = "not ok";
-    $retorno["mensagem"] = "Nome, CNPJ e senha sao obrigatorios.";
-} else if (!cnpj_valido($cnpj)) {
-    $retorno["status"] = "not ok";
-    $retorno["mensagem"] = "CNPJ invalido.";
-} else if (!senha_valida($senha)) {
-    $retorno["status"] = "not ok";
-    $retorno["mensagem"] = senha_mensagem();
+if ($cnpj !== "" && !cnpj_valido($cnpj)) {
+    $erros[] = "CNPJ invalido.";
+}
+
+if ($senha !== "" && !senha_valida($senha)) {
+    $erros[] = senha_mensagem();
+}
+
+if ($senha !== "" && $confirmar_senha !== "" && $senha !== $confirmar_senha) {
+    $erros[] = "As senhas nao coincidem.";
+}
+
+if (count($erros) > 0) {
+    $retorno = retorno_validacao($erros);
 } else {
     $stmt = $conexao->prepare("SELECT id_organizacao FROM Organizacao WHERE cnpj = ?");
     $stmt->bind_param("s", $cnpj);
@@ -35,8 +43,8 @@ if ($nome === "" || $cnpj === "" || $senha === "") {
         $stmt->close();
 
         $stmt = $conexao->prepare("INSERT INTO Organizacao (nome, cnpj, senha) VALUES (?, ?, ?)");
-        $senha = senha_hash($senha);
-        $stmt->bind_param("sss", $nome, $cnpj, $senha);
+        $senha_hash = senha_hash($senha);
+        $stmt->bind_param("sss", $nome, $cnpj, $senha_hash);
         $stmt->execute();
 
         if ($stmt->affected_rows > 0) {

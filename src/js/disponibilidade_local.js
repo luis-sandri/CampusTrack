@@ -32,7 +32,7 @@ document.getElementById("formBusca").addEventListener("submit", async (e) => {
         const resposta = await retorno.json();
 
         if (resposta.status !== "ok") {
-            msgAlert.innerText = resposta.mensagem || "Não foi possível consultar a disponibilidade.";
+            msgAlert.innerText = resposta.mensagem;
             msgAlert.classList.remove("d-none");
             return;
         }

@@ -1,73 +1,29 @@
 <?php
 include_once __DIR__ . "/valida_sessao_gerente.php";
 include_once __DIR__ . "/conexao.php";
+require_once __DIR__ . "/core/resposta.php";
+require_once __DIR__ . "/locais/validacoes.php";
+require_once __DIR__ . "/locais/repositorio.php";
 
-$retorno = [
-    "status" => "",
-    "mensagem" => "",
-    "data" => [],
-];
+$erros = [];
+$id_local = local_ler_id($_GET, $erros);
+$local = local_ler_formulario($_POST, $erros);
+$id_instituicao_gerente = (int) $_SESSION["gerente_id_instituicao"];
 
-if (isset($_GET["id"])) {
-    $id_raw = trim((string) $_GET["id"]);
-    $id = ctype_digit($id_raw) ? (int) $id_raw : 0;
-    $id_instituicao_raw = isset($_POST["id_instituicao"]) ? trim((string) $_POST["id_instituicao"]) : "";
-    $id_instituicao = ctype_digit($id_instituicao_raw) ? (int) $id_instituicao_raw : 0;
-    $tipo_escola = isset($_POST["tipo_escola"]) ? trim((string) $_POST["tipo_escola"]) : "";
-    $tipo = isset($_POST["tipo"]) ? trim((string) $_POST["tipo"]) : "";
-    $nome = isset($_POST["nome"]) ? trim((string) $_POST["nome"]) : "";
-    $capacidade_raw = isset($_POST["capacidade"]) ? trim((string) $_POST["capacidade"]) : "";
-    $longitude = isset($_POST["longitude"]) ? trim((string) $_POST["longitude"]) : "";
-    $latitude = isset($_POST["latitude"]) ? trim((string) $_POST["latitude"]) : "";
-    $id_instituicao_gerente = (int) $_SESSION["gerente_id_instituicao"];
-
-    if ($id <= 0 || $id_instituicao <= 0 || $tipo_escola === "" || $tipo === "" || $nome === "" || $capacidade_raw === "" || !ctype_digit($capacidade_raw) || $longitude === "" || $latitude === "") {
-        $retorno = [
-            "status" => "not ok",
-            "mensagem" => "Dados inválidos.",
-            "data" => [],
-        ];
-    } else if ($id_instituicao !== $id_instituicao_gerente) {
-        $retorno = [
-            "status" => "not ok",
-            "mensagem" => "Acesso negado para esta instituicao.",
-            "data" => [],
-        ];
-    } else {
-        $capacidade = (int) $capacidade_raw;
-        $stmt = $conexao->prepare(
-            "UPDATE Locais SET id_instituicao = ?, tipo_escola = ?, tipo = ?, nome = ?, capacidade = ?, longitude = ?, latitude = ?
-             WHERE id_local = ? AND id_instituicao = ?"
-        );
-        $stmt->bind_param("isssissii", $id_instituicao, $tipo_escola, $tipo, $nome, $capacidade, $longitude, $latitude, $id, $id_instituicao_gerente);
-
-        $stmt->execute();
-
-        if ($stmt->affected_rows > 0) {
-            $retorno = [
-                "status" => "ok",
-                "mensagem" => "Registro alterado com sucesso.",
-                "data" => [],
-            ];
-        } else {
-            $retorno = [
-                "status" => "not ok",
-                "mensagem" => "Não foi possível alterar o registro.",
-                "data" => [],
-            ];
-        }
-
-        $stmt->close();
-    }
-} else {
-    $retorno = [
-        "status" => "not ok",
-        "mensagem" => "Não foi possível alterar o registro sem ID.",
-        "data" => [],
-    ];
+if (count($erros) > 0) {
+    responder_json(resposta_validacao($erros));
 }
 
-$conexao->close();
+if ($local["id_instituicao"] !== $id_instituicao_gerente) {
+    responder_json(resposta_erro("Acesso negado para esta instituicao."));
+}
 
-header("Content-type:application/json;charset=utf-8");
-echo json_encode($retorno);
+if (!local_existe_na_instituicao($conexao, $id_local, $id_instituicao_gerente)) {
+    responder_json(resposta_erro("Local nao encontrado ou sem permissao para alterar."));
+}
+
+if (!local_atualizar($conexao, $id_local, $id_instituicao_gerente, $local)) {
+    responder_json(resposta_erro("Nao foi possivel alterar o registro."));
+}
+
+responder_json(resposta_ok("Registro alterado com sucesso."));

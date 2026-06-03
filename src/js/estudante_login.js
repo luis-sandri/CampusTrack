@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", function () {
     var alertaMsg = document.getElementById("alerta-msg");
     var inputEmail = document.getElementById("email");
     var inputIdInstituicao = document.getElementById("id_instituicao");
-    var inputEmailVerificacao = document.getElementById("email_verificacao");
     var btnEnviarEmail = document.getElementById("btn-enviar-email");
     var btnVerificarCodigo = document.getElementById("btn-verificar-codigo");
     var btnVoltar = document.getElementById("btn-voltar");
@@ -168,80 +167,16 @@ document.addEventListener("DOMContentLoaded", function () {
         alertaMsg.className = "alert d-none";
     }
 
-    function validarDadosCadastro() {
-        var emailValor = inputEmail ? inputEmail.value.trim() : "";
-        var idInstituicaoValor = inputIdInstituicao ? inputIdInstituicao.value.trim() : "";
-        var inputNome = document.getElementById("nome");
-        var inputSenha = document.getElementById("senha");
-        var inputCurso = document.getElementById("curso");
-        var nomeValor = inputNome ? inputNome.value.trim() : "";
-        var senhaValor = inputSenha ? inputSenha.value.trim() : "";
-        var cursoValor = inputCurso ? inputCurso.value.trim() : "";
-
-        if (idInstituicaoValor === "" || !/^\d+$/.test(idInstituicaoValor)) {
-            mostrarAlerta("Instituicao nao informada ou invalida.", "danger");
-            return false;
-        }
-
-        if (!emailValor.endsWith("@pucpr.edu.br")) {
-            mostrarAlerta("O e-mail deve ser do dominio @pucpr.edu.br", "danger");
-            return false;
-        }
-
-        if (modoAluno === "login" && senhaValor === "") {
-            mostrarAlerta("E-mail e senha sao obrigatorios.", "danger");
-            return false;
-        }
-
-        if (modoAluno !== "login" && (nomeValor === "" || senhaValor === "" || cursoValor === "")) {
-            mostrarAlerta("Nome, e-mail, senha e curso sao obrigatorios.", "danger");
-            return false;
-        }
-
-        if (modoAluno !== "login" && inputSenha && !validarSenha(senhaValor)) {
-            mostrarAlerta("A senha deve ter pelo menos 8 caracteres, 1 letra maiuscula, 1 numero e 1 simbolo.", "danger");
-            return false;
-        }
-
-        if (modoAluno !== "login") {
-            var inputConfirmarSenha = document.getElementById("confirmar-senha");
-            var confirmarSenhaValor = inputConfirmarSenha ? inputConfirmarSenha.value.trim() : "";
-            if (senhaValor !== confirmarSenhaValor) {
-                mostrarAlerta("As senhas nao coincidem.", "danger");
-                return false;
-            }
-        }
-
-        if (inputEmailVerificacao) {
-            inputEmailVerificacao.value = emailValor;
-        }
-
-        return true;
-    }
-
-    function validarSenha(senha) {
-        return senha.length >= 8 && /[A-Z]/.test(senha) && /\d/.test(senha) && /[^a-zA-Z0-9]/.test(senha);
-    }
-
     function enviarCodigo() {
         esconderAlerta();
-
-        if (!validarDadosCadastro()) {
-            return;
-        }
 
         var originalText = btnEnviarEmail.textContent;
         btnEnviarEmail.textContent = "Enviando...";
         btnEnviarEmail.disabled = true;
 
-        var formData = new FormData();
-        formData.append("email", inputEmail.value.trim());
-        formData.append("id_instituicao", inputIdInstituicao.value.trim());
-        formData.append("modo", modoAluno);
-        var inputSenha = document.getElementById("senha");
-        if (inputSenha) {
-            formData.append("senha", inputSenha.value.trim());
-        }
+        var formData = new FormData(formEmail);
+        formData.set("id_instituicao", inputIdInstituicao.value.trim());
+        formData.set("modo", modoAluno);
 
         fetch("../../php/codigo_enviar.php", {
             method: "POST",
@@ -255,28 +190,24 @@ document.addEventListener("DOMContentLoaded", function () {
             btnEnviarEmail.disabled = false;
 
             if (data.status === "ok") {
-                mostrarAlerta("Codigo enviado com sucesso!", "success");
+                mostrarAlerta(data.mensagem, "success");
                 if (instrucaoTexto) {
                     instrucaoTexto.textContent = "Insira o codigo de 6 digitos enviado para o seu e-mail.";
                 }
             } else {
-                mostrarAlerta(data.mensagem || "Erro ao enviar codigo.", "danger");
+                mostrarAlerta(data.mensagem, "danger");
             }
         })
         .catch(function (error) {
             btnEnviarEmail.textContent = originalText;
             btnEnviarEmail.disabled = false;
-            mostrarAlerta("Erro de conexao.", "danger");
+            mostrarAlerta("Erro de conexao: " + error.message, "danger");
             console.error(error);
         });
     }
 
     function validarCodigo(formulario) {
         esconderAlerta();
-
-        if (!validarDadosCadastro()) {
-            return;
-        }
 
         var originalText = btnVerificarCodigo.textContent;
         btnVerificarCodigo.textContent = "Validando...";
@@ -299,7 +230,7 @@ document.addEventListener("DOMContentLoaded", function () {
             btnVerificarCodigo.disabled = false;
 
             if (data.status === "ok") {
-                mostrarAlerta(data.mensagem || "Acesso validado com sucesso.", "success");
+                mostrarAlerta(data.mensagem, "success");
                 setTimeout(function () {
                     if (linkVoltarMapa && linkVoltarMapa.getAttribute("href")) {
                         window.location.href = linkVoltarMapa.getAttribute("href");
@@ -310,13 +241,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 }, 1000);
             } else {
-                mostrarAlerta(data.mensagem || "Codigo invalido.", "danger");
+                mostrarAlerta(data.mensagem, "danger");
             }
         })
         .catch(function (error) {
             btnVerificarCodigo.textContent = originalText;
             btnVerificarCodigo.disabled = false;
-            mostrarAlerta("Erro de conexao.", "danger");
+            mostrarAlerta("Erro de conexao: " + error.message, "danger");
             console.error(error);
         });
     }
@@ -1387,7 +1318,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 atualizarPopupsAbertos();
                 atualizarMapaStatus(resposta.mensagem);
             } else {
-                atualizarMapaStatus(resposta.mensagem || "Erro ao favoritar.", "danger");
+                atualizarMapaStatus(resposta.mensagem, "danger");
             }
         })
         .catch(function () {

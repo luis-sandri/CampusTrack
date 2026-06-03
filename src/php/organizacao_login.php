@@ -9,15 +9,17 @@ $retorno = [
     "data" => [],
 ];
 
-$cnpj = isset($_POST["cnpj"]) ? preg_replace("/\D/", "", (string) $_POST["cnpj"]) : "";
-$senha = isset($_POST["senha"]) ? trim((string) $_POST["senha"]) : "";
+$erros = [];
+$cnpj_raw = campo_texto_obrigatorio($_POST, "cnpj", "CNPJ", $erros);
+$cnpj = preg_replace("/\D/", "", $cnpj_raw);
+$senha = campo_texto_obrigatorio($_POST, "senha", "Senha", $erros);
 
-if ($cnpj === "" || $senha === "") {
-    $retorno["status"] = "not ok";
-    $retorno["mensagem"] = "Informe CNPJ e senha.";
-} else if (!cnpj_valido($cnpj)) {
-    $retorno["status"] = "not ok";
-    $retorno["mensagem"] = "CNPJ invalido.";
+if ($cnpj !== "" && !cnpj_valido($cnpj)) {
+    $erros[] = "CNPJ invalido.";
+}
+
+if (count($erros) > 0) {
+    $retorno = retorno_validacao($erros);
 } else {
     $stmt = $conexao->prepare("SELECT id_organizacao, nome, cnpj, senha FROM Organizacao WHERE cnpj = ?");
     $stmt->bind_param("s", $cnpj);

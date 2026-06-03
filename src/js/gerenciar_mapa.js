@@ -68,11 +68,10 @@ function configurarEventos() {
 }
 
 async function carregarInstituicoes() {
-    var retorno = await fetch("../../php/instituicao_get.php");
-    var resposta = await retorno.json();
+    var resposta = await ctJson("../../php/instituicao_get.php");
 
     if (resposta.status !== "ok" || !Array.isArray(resposta.data)) {
-        alert("ERRO! Nao foi possivel carregar as instituicoes.");
+        alert("ERRO! " + ctMensagem(resposta));
         return;
     }
 
@@ -108,8 +107,7 @@ async function carregarMapaInstituicao() {
 }
 
 async function carregarLocais() {
-    var retorno = await fetch("../../php/local_get.php?id_instituicao=" + encodeURIComponent(instituicaoAtual));
-    var resposta = await retorno.json();
+    var resposta = await ctJson("../../php/local_get.php?id_instituicao=" + encodeURIComponent(instituicaoAtual));
 
     camadaLocais.clearLayers();
 
@@ -140,8 +138,7 @@ async function carregarLocais() {
 }
 
 async function carregarGrafo() {
-    var retorno = await fetch("../../php/mapa_grafo_get.php?id_instituicao=" + encodeURIComponent(instituicaoAtual));
-    var resposta = await retorno.json();
+    var resposta = await ctJson("../../php/mapa_grafo_get.php?id_instituicao=" + encodeURIComponent(instituicaoAtual));
 
     if (resposta.status !== "ok" || !Array.isArray(resposta.data) || resposta.data.length === 0) {
         grafoAtual = { nos: [], arestas: [] };
@@ -351,15 +348,14 @@ async function salvarNo() {
     dados.append("longitude", longitude);
 
     var url = id === "" ? "../../php/mapa_no_adicionar.php" : "../../php/mapa_no_alterar.php?id=" + encodeURIComponent(id);
-    var retorno = await fetch(url, { method: "POST", body: dados });
-    var resposta = await retorno.json();
+    var resposta = await ctJson(url, { method: "POST", body: dados });
 
     if (resposta.status === "ok") {
-        alert(resposta.mensagem);
+        alert(ctMensagem(resposta));
         limparFormularioNo();
         await carregarGrafo();
     } else {
-        alert("ERRO! " + resposta.mensagem);
+        alert("ERRO! " + ctMensagem(resposta));
     }
 }
 
@@ -378,16 +374,15 @@ async function excluirNo() {
         return;
     }
 
-    var retorno = await fetch("../../php/mapa_no_excluir.php?id=" + encodeURIComponent(id) + "&id_instituicao=" + encodeURIComponent(instituicaoAtual));
-    var resposta = await retorno.json();
+    var resposta = await ctJson("../../php/mapa_no_excluir.php?id=" + encodeURIComponent(id) + "&id_instituicao=" + encodeURIComponent(instituicaoAtual));
 
     if (resposta.status === "ok") {
-        alert(resposta.mensagem);
+        alert(ctMensagem(resposta));
         limparFormularioNo();
         limparSelecaoAresta();
         await carregarGrafo();
     } else {
-        alert("ERRO! " + resposta.mensagem);
+        alert("ERRO! " + ctMensagem(resposta));
     }
 }
 
@@ -415,18 +410,17 @@ async function criarAresta() {
     dados.append("id_no_origem", selecaoAresta[0]);
     dados.append("id_no_destino", selecaoAresta[1]);
 
-    var retorno = await fetch("../../php/mapa_aresta_adicionar.php", {
+    var resposta = await ctJson("../../php/mapa_aresta_adicionar.php", {
         method: "POST",
         body: dados
     });
-    var resposta = await retorno.json();
 
     if (resposta.status === "ok") {
-        alert(resposta.mensagem);
+        alert(ctMensagem(resposta));
         limparSelecaoAresta();
         await carregarGrafo();
     } else {
-        alert("ERRO! " + resposta.mensagem);
+        alert("ERRO! " + ctMensagem(resposta));
     }
 }
 
@@ -439,14 +433,13 @@ async function excluirAresta(id) {
         return;
     }
 
-    var retorno = await fetch("../../php/mapa_aresta_excluir.php?id=" + encodeURIComponent(id) + "&id_instituicao=" + encodeURIComponent(instituicaoAtual));
-    var resposta = await retorno.json();
+    var resposta = await ctJson("../../php/mapa_aresta_excluir.php?id=" + encodeURIComponent(id) + "&id_instituicao=" + encodeURIComponent(instituicaoAtual));
 
     if (resposta.status === "ok") {
-        alert(resposta.mensagem);
+        alert(ctMensagem(resposta));
         await carregarGrafo();
     } else {
-        alert("ERRO! " + resposta.mensagem);
+        alert("ERRO! " + ctMensagem(resposta));
     }
 }
 

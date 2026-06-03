@@ -1,77 +1,43 @@
 document.addEventListener("DOMContentLoaded", () => {
     valida_sessao();
+
     var url = new URLSearchParams(window.location.search);
-    var id = url.get("id");
-    buscarDados(id);
+    buscarDados(url.get("id"));
+
+    document.getElementById("form-organizador").addEventListener("submit", function (event) {
+        event.preventDefault();
+        alterar_organizador(this);
+    });
 });
 
 async function buscarDados(id) {
-    if (!id || !/^\d+$/.test(id)) {
-        alert("ERRO! ID nao informado ou invalido na URL.");
-        return;
-    }
+    const resposta = await ctJson("../../php/organizador_get.php?id=" + encodeURIComponent(id || ""));
 
-    const retorno = await fetch("../../php/organizador_get.php?id=" + id);
-    const resposta = await retorno.json();
-
-    if (resposta.status == "ok") {
-        if (!Array.isArray(resposta.data)) {
-            alert("ERRO! Retorno do servidor invalido.");
-            return;
-        }
-
-        var reg = resposta.data[0];
-
-        if (!reg || !reg.id_usuario || !reg.nome || !reg.email) {
-            alert("ERRO! Dados do organizador incompletos no retorno do servidor.");
-            return;
-        }
-
-        document.getElementById("organizador-id_usuario").value = reg.id_usuario;
-        document.getElementById("organizador-nome").value = reg.nome;
-        document.getElementById("organizador-email").value = reg.email;
-    } else {
+    if (resposta.status !== "ok") {
         alert("ERRO! " + resposta.mensagem);
         if (resposta.mensagem === "Acesso negado.") {
             window.location.href = "login.html?tipo=organizacao";
         }
+        return;
     }
+
+    if (!Array.isArray(resposta.data) || resposta.data.length === 0) {
+        alert("ERRO! Organizador nao encontrado.");
+        return;
+    }
+
+    var reg = resposta.data[0];
+    document.getElementById("organizador-id_usuario").value = reg.id_usuario;
+    document.getElementById("organizador-nome").value = reg.nome;
+    document.getElementById("organizador-email").value = reg.email;
 }
 
-document.getElementById("form-organizador").addEventListener("submit", function (event) {
-    event.preventDefault();
-    alterar_organizador();
-});
+async function alterar_organizador(form) {
+    var id = document.getElementById("organizador-id_usuario").value;
+    const resposta = await ctEnviarFormulario(form, "../../php/organizador_alterar.php?id=" + encodeURIComponent(id));
+    ctAlertarResposta(resposta);
 
-async function alterar_organizador() {
-    var id = document.getElementById("organizador-id_usuario").value.trim();
-    var nome = document.getElementById("organizador-nome").value.trim();
-    var email = document.getElementById("organizador-email").value.trim();
-
-    if (id === "" || nome === "" || email === "") {
-        alert("ERRO! Todos os campos do organizador sao obrigatorios.");
-        return;
-    }
-
-    if (!/^\d+$/.test(id)) {
-        alert("ERRO! ID precisa ser um numero valido.");
-        return;
-    }
-
-    const organizador_alterado = new FormData();
-    organizador_alterado.append("nome", nome);
-    organizador_alterado.append("email", email);
-
-    const retorno = await fetch("../../php/organizador_alterar.php?id=" + id, {
-        method: "POST",
-        body: organizador_alterado,
-    });
-    const resposta = await retorno.json();
-
-    if (resposta.status == "ok") {
-        alert("Sucesso! " + resposta.mensagem);
+    if (resposta.status === "ok") {
         window.location.href = "gerenciar_organizador.html";
-    } else {
-        alert("ERRO! " + resposta.mensagem);
     }
 }

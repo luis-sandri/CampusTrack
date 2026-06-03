@@ -12,7 +12,7 @@ function evento_formatar_data_exibicao(string $valor): string
     return $data->format("d/m/Y H:i");
 }
 
-function evento_obter_id_instituicao_filtro(array $query, array $sessao): int
+function evento_obter_id_instituicao_filtro(array $query, array $sessao): ?int
 {
     $id_raw = "";
 
@@ -23,7 +23,11 @@ function evento_obter_id_instituicao_filtro(array $query, array $sessao): int
     }
 
     if ($id_raw !== "") {
-        return ctype_digit($id_raw) ? (int) $id_raw : 0;
+        if (!ctype_digit($id_raw) || (int) $id_raw <= 0) {
+            return null;
+        }
+
+        return (int) $id_raw;
     }
 
     if (isset($sessao["aluno_id_instituicao"]) && (int) $sessao["aluno_id_instituicao"] > 0) {

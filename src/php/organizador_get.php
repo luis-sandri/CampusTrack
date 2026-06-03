@@ -1,81 +1,36 @@
 <?php
 include_once __DIR__ . "/valida_sessao_organizacao.php";
 include_once __DIR__ . "/conexao.php";
-
-$retorno = [
-    "status" => "",
-    "mensagem" => "",
-    "data" => [],
-];
+require_once __DIR__ . "/core/resposta.php";
+require_once __DIR__ . "/organizadores/validacoes.php";
+require_once __DIR__ . "/organizadores/repositorio.php";
 
 $id_organizacao = (int) $_SESSION["organizacao_id"];
 
 if (isset($_GET["id"])) {
-    $id_raw = trim((string) $_GET["id"]);
-    $id = ctype_digit($id_raw) ? (int) $id_raw : 0;
+    $erros = [];
+    $id_usuario = organizador_ler_id($_GET, $erros);
 
-    if ($id <= 0) {
-        $retorno = [
-            "status" => "not ok",
-            "mensagem" => "ID invalido.",
-            "data" => [],
-        ];
-    } else {
-        $sql = "SELECT u.id_usuario, u.nome, u.email, o.id_organizador, o.id_organizacao
-            FROM Organizador o
-            INNER JOIN Usuario u ON u.id_usuario = o.id_usuario
-            WHERE u.id_usuario = ? AND o.id_organizacao = ?";
-        $stmt = $conexao->prepare($sql);
-        $stmt->bind_param("ii", $id, $id_organizacao);
-        $stmt->execute();
-        $resultado = $stmt->get_result();
-
-        $data = [];
-        while ($row = $resultado->fetch_assoc()) {
-            $data[] = $row;
-        }
-        $stmt->close();
-
-        if (count($data) > 0) {
-            $retorno = [
-                "status" => "ok",
-                "mensagem" => "Registro encontrado.",
-                "data" => $data,
-            ];
-        } else {
-            $retorno = [
-                "status" => "not ok",
-                "mensagem" => "Registro nao encontrado.",
-                "data" => [],
-            ];
-        }
+    if (count($erros) > 0) {
+        responder_json(resposta_validacao($erros));
     }
-} else {
-    $sql = "SELECT u.id_usuario, u.nome, u.email, o.id_organizador, o.id_organizacao
-            FROM Organizador o
-            INNER JOIN Usuario u ON u.id_usuario = o.id_usuario
-            WHERE o.id_organizacao = ?
-            ORDER BY o.id_organizador";
-    $stmt = $conexao->prepare($sql);
-    $stmt->bind_param("i", $id_organizacao);
-    $stmt->execute();
-    $resultado = $stmt->get_result();
 
-    $data = [];
-    while ($row = $resultado->fetch_assoc()) {
-        $data[] = $row;
+    $organizadores = organizador_buscar_por_id($conexao, $id_usuario, $id_organizacao);
+
+    if ($organizadores === null) {
+        responder_json(resposta_erro("Nao foi possivel carregar o organizador."));
     }
-    $stmt->close();
 
-    $retorno = [
-        "status" => "ok",
-        "mensagem" => "Lista carregada.",
-        "data" => $data,
-    ];
+    if (count($organizadores) === 0) {
+        responder_json(resposta_erro("Registro nao encontrado."));
+    }
+
+    responder_json(resposta_ok("Registro encontrado.", $organizadores));
 }
 
-$conexao->close();
+$organizadores = organizador_listar_por_organizacao($conexao, $id_organizacao);
+if ($organizadores === null) {
+    responder_json(resposta_erro("Nao foi possivel carregar os organizadores."));
+}
 
-header("Content-type:application/json;charset=utf-8");
-echo json_encode($retorno);
-
+responder_json(resposta_ok("Lista carregada.", $organizadores));

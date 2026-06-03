@@ -1,33 +1,17 @@
 document.addEventListener("DOMContentLoaded", () => {
     valida_sessao();
-});
 
-document.getElementById("form-instituicao").addEventListener("submit", function (event) {
-    event.preventDefault();
-    adicionar_instituicao();
-});
-
-async function adicionar_instituicao() {
-    var nome = document.getElementById("instituicao-nome").value.trim();
-
-    if (nome === "") {
-        alert("ERRO! Nome da instituição é obrigatório.");
-        return;
-    }
-
-    const nova_instituicao = new FormData();
-    nova_instituicao.append("nome", nome);
-
-    const retorno = await fetch("../../php/instituicao_adicionar.php", {
-        method: "POST",
-        body: nova_instituicao,
+    document.getElementById("form-instituicao").addEventListener("submit", function (event) {
+        event.preventDefault();
+        adicionar_instituicao(this);
     });
-    const resposta = await retorno.json();
+});
 
-    if (resposta.status == "ok") {
-        alert("Sucesso! " + resposta.mensagem);
+async function adicionar_instituicao(form) {
+    const resposta = await ctEnviarFormulario(form, "../../php/instituicao_adicionar.php");
+    ctAlertarResposta(resposta);
+
+    if (resposta.status === "ok") {
         window.location.href = "gerenciar_instituicao.html";
-    } else {
-        alert("ERRO! " + resposta.mensagem);
     }
 }

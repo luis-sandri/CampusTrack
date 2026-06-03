@@ -86,16 +86,16 @@
               <input type="hidden" id="no-id">
               <div class="mb-3">
                 <label for="no-nome" class="form-label">Nome</label>
-                <input type="text" id="no-nome" class="form-control" maxlength="100" required>
+                <input type="text" id="no-nome" name="nome" class="form-control" maxlength="100" required>
               </div>
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label for="no-latitude" class="form-label">Latitude</label>
-                  <input type="text" id="no-latitude" class="form-control" required>
+                  <input type="text" id="no-latitude" name="latitude" class="form-control" required>
                 </div>
                 <div class="col-md-6 mb-3">
                   <label for="no-longitude" class="form-label">Longitude</label>
-                  <input type="text" id="no-longitude" class="form-control" required>
+                  <input type="text" id="no-longitude" name="longitude" class="form-control" required>
                 </div>
               </div>
               <p class="form-text mt-0 mb-3">Selecione um ponto no mapa para arrastar. Depois clique em Salvar no para gravar a nova posicao.</p>
@@ -135,6 +135,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../../js/valida_sessao.js"></script>
+  <script src="../../js/shared/formulario.js"></script>
   <script src="../../js/gerenciar_mapa.js?v=drag-no-20260526"></script>
 </body>
 </html>

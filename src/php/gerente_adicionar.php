@@ -1,82 +1,30 @@
 <?php
 include_once __DIR__ . "/valida_sessao_admin.php";
 include_once __DIR__ . "/conexao.php";
-include_once __DIR__ . "/validacoes.php";
+require_once __DIR__ . "/core/resposta.php";
+require_once __DIR__ . "/instituicoes/repositorio.php";
+require_once __DIR__ . "/gerentes/validacoes.php";
+require_once __DIR__ . "/gerentes/repositorio.php";
 
-$retorno = [
-    "status" => "",
-    "mensagem" => "",
-    "data" => [],
-];
+$erros = [];
+$gerente = gerente_ler_cadastro($_POST, $erros);
 
-$nome = isset($_POST["nome"]) ? trim((string) $_POST["nome"]) : "";
-$email = isset($_POST["email"]) ? trim((string) $_POST["email"]) : "";
-$senha = isset($_POST["senha"]) ? trim((string) $_POST["senha"]) : "";
-$id_instituicao_raw = isset($_POST["id_instituicao"]) ? trim((string) $_POST["id_instituicao"]) : "";
-$id_instituicao = ctype_digit($id_instituicao_raw) ? (int) $id_instituicao_raw : 0;
-$escola = isset($_POST["escola"]) ? trim((string) $_POST["escola"]) : "";
-
-if ($nome === "" || $email === "" || $senha === "" || $id_instituicao <= 0 || $escola === "") {
-    $retorno = [
-        "status" => "not ok",
-        "mensagem" => "Nome, e-mail, senha, instituicao e escola sao obrigatorios.",
-        "data" => [],
-    ];
-} else if (!senha_valida($senha)) {
-    $retorno = [
-        "status" => "not ok",
-        "mensagem" => senha_mensagem(),
-        "data" => [],
-    ];
-} else {
-    $stmt = $conexao->prepare("SELECT id_usuario FROM Usuario WHERE email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $resultado = $stmt->get_result();
-
-    if ($resultado->num_rows > 0) {
-        $retorno = [
-            "status" => "not ok",
-            "mensagem" => "Ja existe um usuario cadastrado com este e-mail.",
-            "data" => [],
-        ];
-        $stmt->close();
-    } else {
-        $stmt->close();
-        $conexao->begin_transaction();
-
-        try {
-            $senha = senha_hash($senha);
-            $stmt = $conexao->prepare("INSERT INTO Usuario (nome, email, senha) VALUES (?, ?, ?)");
-            $stmt->bind_param("sss", $nome, $email, $senha);
-            $stmt->execute();
-            $id_usuario = (int) $conexao->insert_id;
-            $stmt->close();
-
-            $stmt = $conexao->prepare("INSERT INTO Gerente_Locais (id_gerente, id_instituicao, escola) VALUES (?, ?, ?)");
-            $stmt->bind_param("iis", $id_usuario, $id_instituicao, $escola);
-            $stmt->execute();
-            $stmt->close();
-
-            $conexao->commit();
-
-            $retorno = [
-                "status" => "ok",
-                "mensagem" => "Gerente cadastrado com sucesso.",
-                "data" => [["id_usuario" => $id_usuario]],
-            ];
-        } catch (Throwable $e) {
-            $conexao->rollback();
-            $retorno = [
-                "status" => "not ok",
-                "mensagem" => "Nao foi possivel cadastrar o gerente.",
-                "data" => [],
-            ];
-        }
-    }
+if (count($erros) > 0) {
+    responder_json(resposta_validacao($erros));
 }
 
-$conexao->close();
+if (usuario_email_em_uso($conexao, $gerente["email"])) {
+    responder_json(resposta_erro("Ja existe um usuario cadastrado com este e-mail."));
+}
 
-header("Content-type:application/json;charset=utf-8");
-echo json_encode($retorno);
+if (!instituicao_existe($conexao, $gerente["id_instituicao"])) {
+    responder_json(resposta_erro("Instituicao nao encontrada."));
+}
+
+$id_usuario = gerente_inserir($conexao, $gerente);
+
+if ($id_usuario <= 0) {
+    responder_json(resposta_erro("Nao foi possivel cadastrar o gerente."));
+}
+
+responder_json(resposta_ok("Gerente cadastrado com sucesso.", [["id_usuario" => $id_usuario]]));
