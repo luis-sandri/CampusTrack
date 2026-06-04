@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . "/../validacoes.php";
-require_once __DIR__ . "/../evento_funcoes.php";
+require_once __DIR__ . "/../core/validacoes.php";
+require_once __DIR__ . "/funcoes.php";
 
 function evento_ler_formulario(array $origem, array &$erros): array
 {

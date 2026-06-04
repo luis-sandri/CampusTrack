@@ -42,20 +42,33 @@ O `name` e o nome lido no PHP devem ser iguais.
 document.getElementById("entidade-descricao").value = reg.descricao;
 ```
 
-Para tela de cadastro, normalmente nao precisa alterar o JS se o formulario usa `ctEnviarFormulario(form, url)`, porque `FormData(form)` envia todos os campos com `name`.
+Para tela de cadastro, normalmente nao precisa alterar o JS se o formulario usa `CampusTrack.form.enviar(form, url)`, porque `FormData(form)` envia todos os campos com `name`.
 
 ## Padrao de arquivos
 
 ```text
 src/php/<dominio>/validacoes.php
 src/php/<dominio>/repositorio.php
-src/php/<dominio>_adicionar.php
-src/php/<dominio>_alterar.php
-src/php/<dominio>_excluir.php
-src/php/<dominio>_get.php
-src/js/<dominio>_adicionar.js
-src/js/<dominio>_alterar.js
+src/php/<dominio>/adicionar.php
+src/php/<dominio>/alterar.php
+src/php/<dominio>/excluir.php
+src/php/<dominio>/get.php
+src/js/<dominio>/adicionar.js
+src/js/<dominio>/alterar.js
+src/html/<perfil-ou-dominio>/<tela>.html
 ```
+
+Use `src/html/visitante` apenas para telas publicas. Telas autenticadas devem ficar no perfil dono do fluxo, por exemplo `src/html/organizacao` e `src/html/organizador`.
+
+Arquivos compartilhados do PHP ficam em `src/php/core`. Endpoints de login ficam em `src/php/autenticacao`.
+
+Helpers globais ficam em `src/js/shared/formulario.js` dentro do namespace `CampusTrack`.
+Validacao de sessao no front fica em `src/js/shared/sessao.js`.
+
+- `CampusTrack.api.json(url, options)` chama PHP e trata resposta vazia/invalida.
+- `CampusTrack.form.enviar(form, url)` envia formulario.
+- `CampusTrack.resposta.mensagem(resposta)` le a mensagem padronizada.
+- `CampusTrack.dom.escapeHtml(valor)` protege HTML montado por string.
 
 ## Regra principal
 

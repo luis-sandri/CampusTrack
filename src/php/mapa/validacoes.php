@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . "/../validacoes.php";
+require_once __DIR__ . "/../core/validacoes.php";
 
 function mapa_no_ler_formulario(array $origem, array &$erros): array
 {

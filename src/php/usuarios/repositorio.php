@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . "/../validacoes.php";
+require_once __DIR__ . "/../core/validacoes.php";
 
 function usuario_email_em_uso(mysqli $conexao, string $email, int $ignorar_id = 0): bool
 {

@@ -334,7 +334,7 @@
     <a class="active" data-tab="perfil" href="perfil.html">Perfil</a>
   </nav>
 
-  <script src="../../js/estudante_nav.js?v=perfil-favoritos-20260525" defer></script>
+  <script src="../../js/estudante/nav.js?v=perfil-favoritos-20260525" defer></script>
   <script>
     document.addEventListener("DOMContentLoaded", function () {
       var params = new URLSearchParams(window.location.search);
@@ -359,7 +359,7 @@
         }
       }
 
-      fetch("../../php/sessao_status.php?perfil=aluno")
+      fetch("../../php/core/sessao_status.php?perfil=aluno")
         .then(function (response) { return response.json(); })
         .then(function (resposta) {
           if (resposta.status !== "ok" || !Array.isArray(resposta.data) || resposta.data.length === 0) {
@@ -386,7 +386,7 @@
       var btnSair = document.getElementById("btn-sair");
       if (btnSair) {
         btnSair.addEventListener("click", function () {
-          fetch("../../php/logout.php")
+          fetch("../../php/core/logout.php")
             .finally(function () {
               window.location.href = "login.html" + (idInstituicao ? "?id_instituicao=" + encodeURIComponent(idInstituicao) + "&modo=login" : "");
             });

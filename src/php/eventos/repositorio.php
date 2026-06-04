@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . "/../evento_listagem_funcoes.php";
+require_once __DIR__ . "/listagem_funcoes.php";
 
 function evento_local_pertence_instituicao(mysqli $conexao, int $id_local, int $id_instituicao)
 {
