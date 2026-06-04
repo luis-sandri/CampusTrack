@@ -128,7 +128,7 @@ function campo_inteiro_positivo_obrigatorio(array $origem, string $campo, string
     return (int) $valor;
 }
 
-function campo_decimal_obrigatorio(array $origem, string $campo, string $rotulo, array &$erros, $minimo = null, $maximo = null): string
+function campo_decimal_obrigatorio(array $origem, string $campo, string $rotulo, array &$erros, $minimo = null, $maximo = null, $maximo_casas_decimais = null): string
 {
     $valor = campo_valor($origem, $campo);
 
@@ -144,9 +144,19 @@ function campo_decimal_obrigatorio(array $origem, string $campo, string $rotulo,
 
     $normalizado = str_replace(",", ".", $valor);
 
-    if (!is_numeric($normalizado)) {
+    if (!preg_match("/^[+-]?\d+(\.\d+)?$/", $normalizado)) {
         $erros[] = $rotulo . " deve ser um numero valido.";
         return "";
+    }
+
+    if ($maximo_casas_decimais !== null) {
+        $partes = explode(".", $normalizado, 2);
+        $casas_decimais = isset($partes[1]) ? strlen($partes[1]) : 0;
+
+        if ($casas_decimais > $maximo_casas_decimais) {
+            $erros[] = $rotulo . " deve ter no maximo " . $maximo_casas_decimais . " casas decimais.";
+            return "";
+        }
     }
 
     $numero = (float) $normalizado;

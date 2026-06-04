@@ -83,8 +83,8 @@ CREATE TABLE IF NOT EXISTS Locais (
     nome           VARCHAR(255)   NOT NULL,
     capacidade     INT            NOT NULL,
     tipo           VARCHAR(50)    NOT NULL,
-    longitude      DECIMAL(17,15) NOT NULL,
-    latitude       DECIMAL(17,15) NOT NULL,
+    longitude      DECIMAL(18,15) NOT NULL,
+    latitude       DECIMAL(18,15) NOT NULL,
     CONSTRAINT fk_locais_instituicao
         FOREIGN KEY (id_instituicao)
         REFERENCES Instituicao(id_instituicao)
@@ -95,8 +95,8 @@ CREATE TABLE IF NOT EXISTS Mapa_No (
     id_no          INT            PRIMARY KEY AUTO_INCREMENT,
     id_instituicao INT            NOT NULL,
     nome           VARCHAR(100)   NOT NULL,
-    longitude      DECIMAL(17,15) NOT NULL,
-    latitude       DECIMAL(17,15) NOT NULL,
+    longitude      DECIMAL(18,15) NOT NULL,
+    latitude       DECIMAL(18,15) NOT NULL,
     CONSTRAINT fk_mapa_no_instituicao
         FOREIGN KEY (id_instituicao)
         REFERENCES Instituicao(id_instituicao)
@@ -145,6 +145,14 @@ CREATE TABLE IF NOT EXISTS Evento (
         REFERENCES Organizador(id_organizador)
         ON DELETE CASCADE
 );
+
+ALTER TABLE Locais
+    MODIFY longitude DECIMAL(18,15) NOT NULL,
+    MODIFY latitude DECIMAL(18,15) NOT NULL;
+
+ALTER TABLE Mapa_No
+    MODIFY longitude DECIMAL(18,15) NOT NULL,
+    MODIFY latitude DECIMAL(18,15) NOT NULL;
 
 CREATE TABLE IF NOT EXISTS Comentario (
     id_comentario INT PRIMARY KEY AUTO_INCREMENT,

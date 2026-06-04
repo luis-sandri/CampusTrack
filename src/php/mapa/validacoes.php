@@ -6,8 +6,8 @@ function mapa_no_ler_formulario(array $origem, array &$erros): array
     return [
         "id_instituicao" => campo_inteiro_positivo_obrigatorio($origem, "id_instituicao", "Instituicao", $erros),
         "nome" => campo_texto_obrigatorio($origem, "nome", "Nome", $erros),
-        "longitude" => campo_decimal_obrigatorio($origem, "longitude", "Longitude", $erros, -180, 180),
-        "latitude" => campo_decimal_obrigatorio($origem, "latitude", "Latitude", $erros, -90, 90),
+        "longitude" => campo_decimal_obrigatorio($origem, "longitude", "Longitude", $erros, -180, 180, 15),
+        "latitude" => campo_decimal_obrigatorio($origem, "latitude", "Latitude", $erros, -90, 90, 15),
     ];
 }
 
