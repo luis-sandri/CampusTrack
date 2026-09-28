@@ -1,0 +1,29 @@
+{
+    "name": "campustrack/campustrack",
+    "description": "Infraestrutura de testes do CampusTrack",
+    "type": "project",
+    "require": {
+        "php": "^8.2",
+        "ext-mysqli": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "CampusTrack\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:unit": "phpunit --testsuite unit",
+        "test:integration": "phpunit --testsuite integration",
+        "test:security": "phpunit --testsuite security",
+        "test:mutation": "phpunit --testsuite mutation",
+        "test:performance": "phpunit --testsuite performance"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
+

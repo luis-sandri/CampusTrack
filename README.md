@@ -129,3 +129,45 @@ Antes de publicar ou compartilhar o projeto, mova as credenciais SMTP para vari�
 ## Observações
 
 - Os modelos conceitual e lógico do banco estão disponíveis na pasta `database/`.
+
+## Testes automatizados
+
+Os testes usam PHPUnit e o banco exclusivo `campustrack_test`. O código da aplicação continua usando o banco normal `campustrack`; a conexão de teste fica isolada em `tests/bootstrap.php`.
+
+### Instalação do PHPUnit
+
+Com o Composer instalado, execute na raiz do projeto:
+
+```powershell
+composer install
+```
+
+### Preparação do banco
+
+Inicie o MariaDB no XAMPP e escolha um perfil:
+
+```powershell
+# Esquema e dados comuns
+powershell -ExecutionPolicy Bypass -File database/test/setup_test_database.ps1 -Profile base
+
+# Fixture de isolamento entre alunos do CT40
+powershell -ExecutionPolicy Bypass -File database/test/setup_test_database.ps1 -Profile ct40
+
+# 100 locais e 10.000 eventos para o CT32
+powershell -ExecutionPolicy Bypass -File database/test/setup_test_database.ps1 -Profile ct32
+```
+
+O script sempre remove e recria somente o banco `campustrack_test`.
+
+### Execução
+
+```powershell
+composer test
+composer test:unit
+composer test:integration
+composer test:security
+composer test:mutation
+composer test:performance
+```
+
+Os casos que gerenciam transação internamente, como o CT23, devem herdar de `DatabaseTestCase`. Os demais testes de banco podem herdar de `TransactionalDatabaseTestCase` para que os registros criados sejam revertidos ao final.
