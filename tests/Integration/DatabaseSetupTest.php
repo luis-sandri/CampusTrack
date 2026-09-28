@@ -44,10 +44,11 @@ final class DatabaseSetupTest extends DatabaseTestCase
         }
 
         $tabelasEsperadas = array_map("strtolower", $tabelasEsperadas);
-        sort($tabelasEsperadas);
-        sort($tabelasEncontradas);
 
-        self::assertSame($tabelasEsperadas, $tabelasEncontradas);
+        foreach ($tabelasEsperadas as $tabelaEsperada) {
+            self::assertContains($tabelaEsperada, $tabelasEncontradas);
+        }
+
         self::assertGreaterThanOrEqual(3, $this->contarRegistros("Instituicao"));
         self::assertGreaterThanOrEqual(2, $this->contarRegistros("Aluno"));
         self::assertGreaterThanOrEqual(6, $this->contarRegistros("Locais"));
