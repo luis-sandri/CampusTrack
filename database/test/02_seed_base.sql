@@ -1,20 +1,18 @@
 USE campustrack_test;
 
-SET FOREIGN_KEY_CHECKS = 0;
-TRUNCATE TABLE Comentario;
-TRUNCATE TABLE Favorito;
-TRUNCATE TABLE Evento;
-TRUNCATE TABLE Mapa_Aresta;
-TRUNCATE TABLE Mapa_No;
-TRUNCATE TABLE Locais;
-TRUNCATE TABLE Organizador;
-TRUNCATE TABLE Administrador;
-TRUNCATE TABLE Gerente_Locais;
-TRUNCATE TABLE Aluno;
-TRUNCATE TABLE Organizacao;
-TRUNCATE TABLE Instituicao;
-TRUNCATE TABLE Usuario;
-SET FOREIGN_KEY_CHECKS = 1;
+DELETE FROM Comentario;
+DELETE FROM Favorito;
+DELETE FROM Evento;
+DELETE FROM Mapa_Aresta;
+DELETE FROM Mapa_No;
+DELETE FROM Locais;
+DELETE FROM Organizador;
+DELETE FROM Administrador;
+DELETE FROM Gerente_Locais;
+DELETE FROM Aluno;
+DELETE FROM Organizacao;
+DELETE FROM Instituicao;
+DELETE FROM Usuario;
 
 INSERT INTO Usuario (id_usuario, nome, email, senha) VALUES
     (1, 'Administrador Teste', 'admin@campustrack.test', '$2y$10$kmEF/BkfRsUGyMXxzMP14u7C0yDyHHeqCAt5oBDzKBlsUk4S.aZl.'),
