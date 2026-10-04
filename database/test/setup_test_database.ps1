@@ -1,7 +1,9 @@
 [CmdletBinding()]
 param(
     [ValidateSet("base", "ct40", "ct32")]
-    [string] $Profile = "base"
+    [string] $Profile = "base",
+    [ValidateRange(1, 65535)]
+    [int] $Port = 3306
 )
 
 $mysql = "C:\xampp\mysql\bin\mysql.exe"
@@ -25,7 +27,7 @@ if ($Profile -eq "ct32") {
 
 foreach ($script in $scripts) {
     $resolved = (Resolve-Path -LiteralPath $script).Path.Replace("\", "/")
-    & $mysql --host=127.0.0.1 --user=root --execute="SOURCE $resolved"
+    & $mysql --host=127.0.0.1 --port=$Port --user=root --execute="SOURCE $resolved"
 
     if ($LASTEXITCODE -ne 0) {
         throw "Falha ao executar $script."
