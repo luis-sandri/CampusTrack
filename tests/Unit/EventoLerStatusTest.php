@@ -22,4 +22,22 @@ final class EventoLerStatusTest extends TestCase
         self::assertSame("ativo", $resultado);
         self::assertEmpty($erros);
     }
+
+    public function testCt28RejeitaStatusNaoPermitido(): void
+    {
+        $origem = [
+            "novo_status" => "qualquer"
+        ];
+        $erros = [];
+
+        $resultado = \evento_ler_status($origem, $erros);
+
+        self::assertSame("qualquer", $resultado);
+        self::assertContains(
+            "Status deve ser ativo ou recusado.",
+            $erros
+        );
+    }
 }
+
+
